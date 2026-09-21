@@ -69,12 +69,12 @@
     }
   ],
   "actions": [
-    { "type": "Action.Execute", "$when": "${!clockedIn}", "title": "${clockInNow}", "verb": "clockIn", "style": "positive" },
-    { "type": "Action.Execute", "$when": "${canEdit && $host.widgetSize != 'small'}", "title": "✎  ${editTime}", "tooltip": "${editTime}", "verb": "edit" },
-    { "type": "Action.Execute", "$when": "${canEdit && $host.widgetSize != 'small'}", "title": "×  ${clear}", "tooltip": "${clear}", "verb": "askClear", "style": "destructive" },
-    { "type": "Action.Execute", "$when": "${isEditing && $host.widgetSize != 'small'}", "title": "${saveChanges}", "verb": "saveTime", "style": "positive" },
+    { "type": "Action.Execute", "$when": "${!clockedIn}", "title": "${clockInNow}", "verb": "clockIn" },
+    { "type": "Action.Execute", "$when": "${canEdit && $host.widgetSize != 'small'}", "title": "${editTime}", "verb": "edit" },
+    { "type": "Action.Execute", "$when": "${canEdit && $host.widgetSize != 'small'}", "title": "${clear}", "verb": "askClear" },
+    { "type": "Action.Execute", "$when": "${isEditing && $host.widgetSize != 'small'}", "title": "${saveChanges}", "verb": "saveTime" },
     { "type": "Action.Execute", "$when": "${isEditing && $host.widgetSize != 'small'}", "title": "${cancelEdit}", "verb": "cancelEdit" },
-    { "type": "Action.Execute", "$when": "${confirmingClear}", "title": "×  ${clear}", "tooltip": "${clear}", "verb": "clear", "style": "destructive" },
+    { "type": "Action.Execute", "$when": "${confirmingClear}", "title": "${clear}", "verb": "clear" },
     { "type": "Action.Execute", "$when": "${confirmingClear}", "title": "${cancel}", "verb": "cancelClear" }
   ]
 }
