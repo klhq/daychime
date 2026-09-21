@@ -13,3 +13,7 @@ workday-history.csv
 .vs/
 *.user
 *.suo
+
+# .NET build outputs
+bin/
+obj/
