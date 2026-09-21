@@ -18,12 +18,20 @@ The planned primary interface is a native Windows 11 Widgets Board card, opened 
 
 ```text
 Mon, Sep 21
+Now 14:32                            24h
 
 Clock in                    09:07
 Expected finish             18:07
 
-[ Edit time ]   [ Clear ]
+Clear today's record
+
+[ Edit time ]
 ```
+
+The footer never carries more than two buttons at once. `Clear` lives as a
+small always-visible link under the stats instead of a footer button, and the
+12/24-hour preference is a one-tap chip next to "Now" instead of a separate
+settings screen — it never interrupts the clock-in flow.
 
 At the expected finish time, the tool sends one notification only. It never automatically clocks out or clears a record. On workstation unlock, it refreshes the current day and sends a missed finish-time notification once when needed.
 

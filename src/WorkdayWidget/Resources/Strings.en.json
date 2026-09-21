@@ -7,6 +7,7 @@
   "invalidTime": "Enter a valid time, for example 09:00.",
   "saveChanges": "Save changes",
   "clear": "Clear",
+  "clearLink": "Clear today's record",
   "confirmClear": "Clear today's entry?",
   "cancel": "Cancel",
   "breakSummary": "8 hours work + 1 hour break",
@@ -14,12 +15,8 @@
   "clockInHint": "Clock in to calculate your expected finish time.",
   "nowLabel": "Now",
   "cancelEdit": "Cancel edit",
-  "settings": "Settings",
-  "saveSettings": "Save settings",
-  "cancelSettings": "Cancel",
-  "timeFormatLabel": "Time format",
-  "timeFormat24Hour": "24-hour",
-  "timeFormat12Hour": "12-hour",
+  "switchTo12Hour": "Switch to 12-hour clock",
+  "switchTo24Hour": "Switch to 24-hour clock",
   "finishNotificationTitle": "Workday Widget",
   "finishNotificationBody": "Your expected finish time was {0}."
 }

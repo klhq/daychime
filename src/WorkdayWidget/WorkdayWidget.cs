@@ -15,7 +15,6 @@ internal sealed class WorkdayWidget : WidgetImplBase
     private const string FinishReminderGroup = "workday";
     private const string EditingPrefix = "editing|";
     private const string EditingErrorPrefix = "editing-error|";
-    private const string SettingsPrefix = "settings|";
     private const string ConfirmClearPrefix = "confirm-clear|";
     public WorkdayWidget(string widgetId, string startingState) : base(widgetId, startingState) { }
 
@@ -30,18 +29,7 @@ internal sealed class WorkdayWidget : WidgetImplBase
                     state = EditingPrefix + State;
                 break;
             case "cancelEdit": state = State.StartsWith(EditingPrefix) ? State[EditingPrefix.Length..] : State; break;
-            case "settings":
-                if (!string.IsNullOrEmpty(State) && !State.StartsWith(SettingsPrefix))
-                    state = SettingsPrefix + State;
-                break;
-            case "cancelSettings": state = State.StartsWith(SettingsPrefix) ? State[SettingsPrefix.Length..] : State; break;
-            case "saveSettings":
-                using (var data = JsonDocument.Parse(args.Data))
-                {
-                    SaveTimeFormatPreference(data.RootElement);
-                    state = State.StartsWith(SettingsPrefix) ? State[SettingsPrefix.Length..] : State;
-                }
-                break;
+            case "toggleTimeFormat": ToggleUse24Hour(); break;
             case "askClear": state = ConfirmClearPrefix + GetClockInState(State); break;
             case "cancelClear": state = State.StartsWith(ConfirmClearPrefix) ? State[ConfirmClearPrefix.Length..] : State; break;
             case "clear": state = string.Empty; break;
@@ -70,7 +58,6 @@ internal sealed class WorkdayWidget : WidgetImplBase
         var confirmingClear = State.StartsWith(ConfirmClearPrefix);
         var isEditing = State.StartsWith(EditingPrefix) || State.StartsWith(EditingErrorPrefix);
         var hasTimeError = State.StartsWith(EditingErrorPrefix);
-        var isConfiguring = State.StartsWith(SettingsPrefix);
         var effectiveState = GetClockInState(State);
         var clockedIn = DateTimeOffset.TryParse(effectiveState, out var start);
         var finish = clockedIn ? start.AddHours(9) : default;
@@ -79,17 +66,18 @@ internal sealed class WorkdayWidget : WidgetImplBase
         return new JsonObject {
             ["date"] = DateTime.Today.ToString("D", CultureInfo.CurrentCulture),
             ["clockedIn"] = clockedIn,
-            ["canEdit"] = clockedIn && !confirmingClear && !isEditing && !isConfiguring,
+            ["canEdit"] = clockedIn && !confirmingClear && !isEditing,
             ["isEditing"] = clockedIn && isEditing,
             ["hasTimeError"] = clockedIn && hasTimeError,
-            ["isConfiguring"] = clockedIn && isConfiguring,
             ["confirmingClear"] = confirmingClear,
+            ["showFormatToggle"] = !isEditing && !confirmingClear,
             ["clockIn"] = clockedIn ? start.ToString(timeFormat, CultureInfo.CurrentCulture) : "--:--",
             ["clockInValue"] = clockedIn ? start.ToString("HH:mm") : "",
             ["finish"] = clockedIn ? finish.ToString(timeFormat, CultureInfo.CurrentCulture) : "--:--",
             ["now"] = DateTimeOffset.Now.ToString(timeFormat, CultureInfo.CurrentCulture),
             ["use24Hour"] = use24Hour,
-            ["timeFormat"] = use24Hour ? "24" : "12",
+            ["formatBadge"] = use24Hour ? "24h" : "12h",
+            ["formatToggleTitle"] = use24Hour ? GetString(strings, "switchTo12Hour") : GetString(strings, "switchTo24Hour"),
             ["clockInLabel"] = GetString(strings, "clockInLabel"),
             ["finishLabel"] = GetString(strings, "finishLabel"),
             ["clockInNow"] = GetString(strings, "clockInNow"),
@@ -98,19 +86,14 @@ internal sealed class WorkdayWidget : WidgetImplBase
             ["invalidTime"] = GetString(strings, "invalidTime"),
             ["saveChanges"] = GetString(strings, "saveChanges"),
             ["clear"] = GetString(strings, "clear"),
+            ["clearLink"] = GetString(strings, "clearLink"),
             ["confirmClear"] = GetString(strings, "confirmClear"),
             ["cancel"] = GetString(strings, "cancel"),
             ["breakSummary"] = GetString(strings, "breakSummary"),
             ["notClockedInYet"] = GetString(strings, "notClockedInYet"),
             ["clockInHint"] = GetString(strings, "clockInHint"),
             ["nowLabel"] = GetString(strings, "nowLabel"),
-            ["cancelEdit"] = GetString(strings, "cancelEdit"),
-            ["settings"] = GetString(strings, "settings"),
-            ["saveSettings"] = GetString(strings, "saveSettings"),
-            ["cancelSettings"] = GetString(strings, "cancelSettings"),
-            ["timeFormatLabel"] = GetString(strings, "timeFormatLabel"),
-            ["timeFormat24Hour"] = GetString(strings, "timeFormat24Hour"),
-            ["timeFormat12Hour"] = GetString(strings, "timeFormat12Hour")
+            ["cancelEdit"] = GetString(strings, "cancelEdit")
         }.ToJsonString();
     }
 
@@ -138,8 +121,6 @@ internal sealed class WorkdayWidget : WidgetImplBase
             return currentState[EditingPrefix.Length..];
         if (currentState.StartsWith(EditingErrorPrefix))
             return currentState[EditingErrorPrefix.Length..];
-        if (currentState.StartsWith(SettingsPrefix))
-            return currentState[SettingsPrefix.Length..];
         return currentState;
     }
 
@@ -151,13 +132,9 @@ internal sealed class WorkdayWidget : WidgetImplBase
             : CultureInfo.CurrentCulture.DateTimeFormat.ShortTimePattern.Contains('H');
     }
 
-    private static void SaveTimeFormatPreference(JsonElement data)
+    private static void ToggleUse24Hour()
     {
-        if (data.TryGetProperty("timeFormat", out var preference))
-        {
-            var enabled = string.Equals(preference.GetString(), "24", StringComparison.Ordinal);
-            ApplicationData.Current.LocalSettings.Values["Use24Hour"] = enabled;
-        }
+        ApplicationData.Current.LocalSettings.Values["Use24Hour"] = !GetUse24Hour();
     }
 
     private void NormalizeStateForToday()
