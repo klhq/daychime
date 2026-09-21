@@ -1,0 +1,11 @@
+{
+  "clockInLabel": "上班打卡",
+  "finishLabel": "预计下班",
+  "clockInNow": "现在打卡",
+  "editTime": "修改上班时间",
+  "saveChanges": "保存更改",
+  "clear": "清除",
+  "confirmClear": "要清除今天的打卡记录吗？",
+  "cancel": "取消",
+  "breakSummary": "工作 8 小时 + 休息 1 小时"
+}

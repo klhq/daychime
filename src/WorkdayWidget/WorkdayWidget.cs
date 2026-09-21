@@ -36,7 +36,7 @@ internal sealed class WorkdayWidget : WidgetImplBase
 
     public override string GetDataForWidget()
     {
-        var strings = JsonNode.Parse(ReadPackageFileFromUri("ms-appx:///Resources/Strings.en.json"))!.AsObject();
+        var strings = JsonNode.Parse(ReadPackageFileFromUri(GetStringsUri()))!.AsObject();
         var confirmingClear = State.StartsWith("confirm-clear|");
         var effectiveState = confirmingClear ? State[14..] : State;
         var clockedIn = DateTimeOffset.TryParse(effectiveState, out var start);
@@ -58,5 +58,19 @@ internal sealed class WorkdayWidget : WidgetImplBase
             ["cancel"] = strings["cancel"],
             ["breakSummary"] = strings["breakSummary"]
         }.ToJsonString();
+    }
+
+    private static string GetStringsUri()
+    {
+        var language = CultureInfo.CurrentUICulture.Name;
+        if (language.StartsWith("zh-Hant", StringComparison.OrdinalIgnoreCase) ||
+            language.StartsWith("zh-TW", StringComparison.OrdinalIgnoreCase) ||
+            language.StartsWith("zh-HK", StringComparison.OrdinalIgnoreCase))
+            return "ms-appx:///Resources/zh-Hant/Strings.json";
+        if (language.StartsWith("zh-Hans", StringComparison.OrdinalIgnoreCase) ||
+            language.StartsWith("zh-CN", StringComparison.OrdinalIgnoreCase) ||
+            language.StartsWith("zh-SG", StringComparison.OrdinalIgnoreCase))
+            return "ms-appx:///Resources/zh-Hans/Strings.json";
+        return "ms-appx:///Resources/Strings.en.json";
     }
 }
