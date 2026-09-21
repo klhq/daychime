@@ -11,7 +11,7 @@
 	<Identity
 	  Name="WorkdayWidget"
 	  Publisher="CN=Workday Widget"
-	  Version="1.0.10.0" />
+	  Version="1.0.11.0" />
 
 	<Properties>
 		<DisplayName>Workday Widget</DisplayName>
@@ -54,7 +54,7 @@
 						<uap3:Properties>
 							<WidgetProvider>
 								<ProviderIcons>
-									<Icon Path="Assets\StoreLogo.png" />
+									<Icon Path="ProviderAssets\Workday_Icon_Light.png" />
 								</ProviderIcons>
 								<Activation>
 									<!-- Apps exports COM interface which implements IWidgetProvider -->
@@ -78,14 +78,21 @@
 										</Capabilities>
 										<ThemeResources>
 											<Icons>
-												<Icon Path="ProviderAssets\Counting_Icon.png" />
+											<Icon Path="ProviderAssets\Workday_Icon_Light.png" />
 											</Icons>
 											<Screenshots>
 												<Screenshot Path="ProviderAssets\Counting_Screenshot.png" DisplayAltText="Workday Widget preview" />
 											</Screenshots>
-											<!-- DarkMode and LightMode are optional -->
-											<DarkMode />
-											<LightMode />
+											<DarkMode>
+												<Icons>
+													<Icon Path="ProviderAssets\Workday_Icon_Dark.png" />
+												</Icons>
+											</DarkMode>
+											<LightMode>
+												<Icons>
+													<Icon Path="ProviderAssets\Workday_Icon_Light.png" />
+												</Icons>
+											</LightMode>
 										</ThemeResources>
 									</Definition>
 								</Definitions>
