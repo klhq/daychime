@@ -68,7 +68,7 @@ internal sealed class WorkdayWidget : WidgetImplBase
             ["finish"] = clockedIn ? finish.ToString(timeFormat, CultureInfo.CurrentCulture) : "--:--",
             ["now"] = DateTimeOffset.Now.ToString(timeFormat, CultureInfo.CurrentCulture),
             ["use24Hour"] = use24Hour,
-            ["use24HourValue"] = use24Hour ? "true" : "false",
+            ["timeFormat"] = use24Hour ? "24" : "12",
             ["clockInLabel"] = GetString(strings, "clockInLabel"),
             ["finishLabel"] = GetString(strings, "finishLabel"),
             ["clockInNow"] = GetString(strings, "clockInNow"),
@@ -82,7 +82,9 @@ internal sealed class WorkdayWidget : WidgetImplBase
             ["clockInHint"] = GetString(strings, "clockInHint"),
             ["nowLabel"] = GetString(strings, "nowLabel"),
             ["cancelEdit"] = GetString(strings, "cancelEdit"),
-            ["use24HourLabel"] = GetString(strings, "use24HourLabel")
+            ["timeFormatLabel"] = GetString(strings, "timeFormatLabel"),
+            ["timeFormat24Hour"] = GetString(strings, "timeFormat24Hour"),
+            ["timeFormat12Hour"] = GetString(strings, "timeFormat12Hour")
         }.ToJsonString();
     }
 
@@ -121,15 +123,9 @@ internal sealed class WorkdayWidget : WidgetImplBase
 
     private static void SaveTimeFormatPreference(JsonElement data)
     {
-        if (data.TryGetProperty("use24Hour", out var preference))
+        if (data.TryGetProperty("timeFormat", out var preference))
         {
-            var enabled = preference.ValueKind switch
-            {
-                JsonValueKind.True => true,
-                JsonValueKind.False => false,
-                JsonValueKind.String => string.Equals(preference.GetString(), "true", StringComparison.OrdinalIgnoreCase),
-                _ => GetUse24Hour()
-            };
+            var enabled = string.Equals(preference.GetString(), "24", StringComparison.Ordinal);
             ApplicationData.Current.LocalSettings.Values["Use24Hour"] = enabled;
         }
     }
