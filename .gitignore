@@ -1,0 +1,15 @@
+# Local runtime data
+work/
+today.json
+workday-log.csv
+workday-history.csv
+
+# Build outputs and local launch helpers
+*.exe
+*.pdb
+*.vbs
+
+# Visual Studio / Windows user settings
+.vs/
+*.user
+*.suo
