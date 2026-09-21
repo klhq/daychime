@@ -21,6 +21,7 @@
     <Content Include="ProviderAssets\**\*.png" />
     <Content Include="Templates\**\*.json" />
     <Content Include="Resources\**\*.json" />
+    <Content Include="Locales\**\*.json" />
   </ItemGroup>
 
   <ItemGroup>

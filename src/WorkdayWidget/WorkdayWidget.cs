@@ -66,11 +66,11 @@ internal sealed class WorkdayWidget : WidgetImplBase
         if (language.StartsWith("zh-Hant", StringComparison.OrdinalIgnoreCase) ||
             language.StartsWith("zh-TW", StringComparison.OrdinalIgnoreCase) ||
             language.StartsWith("zh-HK", StringComparison.OrdinalIgnoreCase))
-            return "ms-appx:///Resources/zh-Hant/Strings.json";
+            return "ms-appx:///Locales/TraditionalChinese.json";
         if (language.StartsWith("zh-Hans", StringComparison.OrdinalIgnoreCase) ||
             language.StartsWith("zh-CN", StringComparison.OrdinalIgnoreCase) ||
             language.StartsWith("zh-SG", StringComparison.OrdinalIgnoreCase))
-            return "ms-appx:///Resources/zh-Hans/Strings.json";
+            return "ms-appx:///Locales/SimplifiedChinese.json";
         return "ms-appx:///Resources/Strings.en.json";
     }
 }
