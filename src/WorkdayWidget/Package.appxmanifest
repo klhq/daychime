@@ -11,7 +11,7 @@
 	<Identity
 	  Name="WorkdayWidget"
 	  Publisher="CN=Workday Widget"
-	  Version="1.0.11.0" />
+	  Version="1.0.12.0" />
 
 	<Properties>
 		<DisplayName>Workday Widget</DisplayName>
@@ -81,17 +81,23 @@
 											<Icon Path="ProviderAssets\Workday_Icon_Light.png" />
 											</Icons>
 											<Screenshots>
-												<Screenshot Path="ProviderAssets\Counting_Screenshot.png" DisplayAltText="Workday Widget preview" />
+											<Screenshot Path="ProviderAssets\Workday_Screenshot_Light.png" DisplayAltText="Workday Widget preview" />
 											</Screenshots>
 											<DarkMode>
 												<Icons>
 													<Icon Path="ProviderAssets\Workday_Icon_Dark.png" />
 												</Icons>
+												<Screenshots>
+													<Screenshot Path="ProviderAssets\Workday_Screenshot_Dark.png" DisplayAltText="Workday Widget preview" />
+												</Screenshots>
 											</DarkMode>
 											<LightMode>
 												<Icons>
 													<Icon Path="ProviderAssets\Workday_Icon_Light.png" />
 												</Icons>
+												<Screenshots>
+													<Screenshot Path="ProviderAssets\Workday_Screenshot_Light.png" DisplayAltText="Workday Widget preview" />
+												</Screenshots>
 											</LightMode>
 										</ThemeResources>
 									</Definition>
