@@ -14,12 +14,14 @@ internal sealed class WorkdayWidget : WidgetImplBase
     private const string FinishReminderTag = "finish-reminder";
     private const string FinishReminderGroup = "workday";
     private const string EditingPrefix = "editing|";
+    private const string EditingErrorPrefix = "editing-error|";
     private const string SettingsPrefix = "settings|";
     private const string ConfirmClearPrefix = "confirm-clear|";
     public WorkdayWidget(string widgetId, string startingState) : base(widgetId, startingState) { }
 
     public override void OnActionInvoked(WidgetActionInvokedArgs args)
     {
+        NormalizeStateForToday();
         switch (args.Verb)
         {
             case "clockIn": state = DateTimeOffset.Now.ToString("O"); break;
@@ -49,6 +51,8 @@ internal sealed class WorkdayWidget : WidgetImplBase
                     if (data.RootElement.TryGetProperty("clockIn", out var time) &&
                         TryParseClockIn(time.GetString(), out var parsed))
                         state = new DateTimeOffset(DateTime.Today.Add(parsed.ToTimeSpan())).ToString("O");
+                    else
+                        state = EditingErrorPrefix + GetClockInState(State);
                 }
                 break;
         }
@@ -61,9 +65,11 @@ internal sealed class WorkdayWidget : WidgetImplBase
 
     public override string GetDataForWidget()
     {
+        NormalizeStateForToday();
         var strings = JsonNode.Parse(ReadPackageFileFromUri(GetStringsUri()))!.AsObject();
         var confirmingClear = State.StartsWith(ConfirmClearPrefix);
-        var isEditing = State.StartsWith(EditingPrefix);
+        var isEditing = State.StartsWith(EditingPrefix) || State.StartsWith(EditingErrorPrefix);
+        var hasTimeError = State.StartsWith(EditingErrorPrefix);
         var isConfiguring = State.StartsWith(SettingsPrefix);
         var effectiveState = GetClockInState(State);
         var clockedIn = DateTimeOffset.TryParse(effectiveState, out var start);
@@ -71,10 +77,11 @@ internal sealed class WorkdayWidget : WidgetImplBase
         var use24Hour = GetUse24Hour();
         var timeFormat = use24Hour ? "HH:mm" : CultureInfo.CurrentCulture.DateTimeFormat.ShortTimePattern;
         return new JsonObject {
-            ["date"] = DateTime.Today.ToString("dddd, MMMM d", CultureInfo.CurrentCulture),
+            ["date"] = DateTime.Today.ToString("D", CultureInfo.CurrentCulture),
             ["clockedIn"] = clockedIn,
             ["canEdit"] = clockedIn && !confirmingClear && !isEditing && !isConfiguring,
             ["isEditing"] = clockedIn && isEditing,
+            ["hasTimeError"] = clockedIn && hasTimeError,
             ["isConfiguring"] = clockedIn && isConfiguring,
             ["confirmingClear"] = confirmingClear,
             ["clockIn"] = clockedIn ? start.ToString(timeFormat, CultureInfo.CurrentCulture) : "--:--",
@@ -87,6 +94,8 @@ internal sealed class WorkdayWidget : WidgetImplBase
             ["finishLabel"] = GetString(strings, "finishLabel"),
             ["clockInNow"] = GetString(strings, "clockInNow"),
             ["editTime"] = GetString(strings, "editTime"),
+            ["clockInTimeLabel"] = GetString(strings, "clockInTimeLabel"),
+            ["invalidTime"] = GetString(strings, "invalidTime"),
             ["saveChanges"] = GetString(strings, "saveChanges"),
             ["clear"] = GetString(strings, "clear"),
             ["confirmClear"] = GetString(strings, "confirmClear"),
@@ -127,6 +136,8 @@ internal sealed class WorkdayWidget : WidgetImplBase
             return currentState[ConfirmClearPrefix.Length..];
         if (currentState.StartsWith(EditingPrefix))
             return currentState[EditingPrefix.Length..];
+        if (currentState.StartsWith(EditingErrorPrefix))
+            return currentState[EditingErrorPrefix.Length..];
         if (currentState.StartsWith(SettingsPrefix))
             return currentState[SettingsPrefix.Length..];
         return currentState;
@@ -149,8 +160,20 @@ internal sealed class WorkdayWidget : WidgetImplBase
         }
     }
 
+    private void NormalizeStateForToday()
+    {
+        if (DateTimeOffset.TryParse(GetClockInState(State), out var start) &&
+            start.LocalDateTime.Date < DateTime.Today)
+            state = string.Empty;
+    }
+
     private static bool TryParseClockIn(string value, out TimeOnly parsed)
     {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            parsed = default;
+            return false;
+        }
         return TimeOnly.TryParseExact(value, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out parsed) ||
             TimeOnly.TryParse(value, CultureInfo.CurrentCulture, DateTimeStyles.None, out parsed);
     }
@@ -176,7 +199,7 @@ internal sealed class WorkdayWidget : WidgetImplBase
         var text = toastXml.GetElementsByTagName("text");
         text[0]!.InnerText = strings["finishNotificationTitle"]!.GetValue<string>();
         text[1]!.InnerText = string.Format(CultureInfo.CurrentCulture,
-            strings["finishNotificationBody"]!.GetValue<string>(), finish.ToString("HH:mm"));
+            strings["finishNotificationBody"]!.GetValue<string>(), finish.ToString(GetUse24Hour() ? "HH:mm" : CultureInfo.CurrentCulture.DateTimeFormat.ShortTimePattern, CultureInfo.CurrentCulture));
 
         var reminder = new ScheduledToastNotification(toastXml, finish)
         {

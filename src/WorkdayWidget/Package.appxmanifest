@@ -11,7 +11,7 @@
 	<Identity
 	  Name="WorkdayWidget"
 	  Publisher="CN=Workday Widget"
-	  Version="1.0.22.0" />
+	  Version="1.0.23.0" />
 
 	<Properties>
 		<DisplayName>Workday Widget</DisplayName>
@@ -62,7 +62,7 @@
 								</Activation>
 
 								<Definitions>
-                                    <Definition Id="Workday_Widget"
+                                    <Definition Id="Workday_Widget" AllowMultiple="false"
 										DisplayName="Workday Widget"
 										Description="Clock in and see your expected finish time.">
 										<Capabilities>

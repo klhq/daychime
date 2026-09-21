@@ -36,8 +36,8 @@ namespace CsConsoleWidgetProvider
             return readTextTask.Result;
         }
 
-        public virtual void Activate(WidgetContext widgetContext) { }
-        public virtual void Deactivate() { }
+        public virtual void Activate(WidgetContext widgetContext) { isActivated = true; }
+        public virtual void Deactivate() { isActivated = false; }
         public virtual void OnActionInvoked(WidgetActionInvokedArgs actionInvokedArgs) { }
         public virtual void OnWidgetContextChanged(WidgetContextChangedArgs contextChangedArgs) { }
 

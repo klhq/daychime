@@ -20,15 +20,31 @@ public sealed class WidgetProvider : IWidgetProvider
     private static bool HaveRecoveredWidgets { get; set; } = false;
     private static void RecoverRunningWidgets()
     {
-        if (!HaveRecoveredWidgets)
+        if (HaveRecoveredWidgets)
+            return;
+
+        try
         {
-            try
+            var widgetManager = WidgetManager.GetDefault();
+            var widgetInfos = widgetManager.GetWidgetInfos();
+            if (widgetInfos is null)
             {
-                var widgetManager = WidgetManager.GetDefault();
-                foreach (var widgetInfo in widgetManager.GetWidgetInfos())
+                ProviderDiagnostics.Write("Recovery deferred because the Widgets host returned no widget list.");
+                return;
+            }
+
+            foreach (var widgetInfo in widgetInfos)
+            {
+                try
                 {
-                    ProviderDiagnostics.Write($"Recovering widget {widgetInfo.WidgetContext.Id} ({widgetInfo.WidgetContext.DefinitionId}).");
                     var context = widgetInfo.WidgetContext;
+                    if (context is null)
+                    {
+                        ProviderDiagnostics.Write("Skipping a widget recovery entry with no context.");
+                        continue;
+                    }
+
+                    ProviderDiagnostics.Write($"Recovering widget {context.Id} ({context.DefinitionId}).");
                     if (!WidgetInstances.ContainsKey(context.Id))
                     {
                         if (WidgetImpls.ContainsKey(context.DefinitionId))
@@ -51,15 +67,17 @@ public sealed class WidgetProvider : IWidgetProvider
                         }
                     }
                 }
+                catch (Exception ex)
+                {
+                    ProviderDiagnostics.Write($"Recovery error for one widget: {ex}");
+                }
             }
-            catch (Exception ex)
-            {
-                ProviderDiagnostics.Write($"Recovery error: {ex}");
-            }
-            finally
-            {
-                HaveRecoveredWidgets = true;
-            }
+
+            HaveRecoveredWidgets = true;
+        }
+        catch (Exception ex)
+        {
+            ProviderDiagnostics.Write($"Recovery deferred: {ex}");
         }
     }
 
@@ -135,7 +153,19 @@ public sealed class WidgetProvider : IWidgetProvider
         ProviderDiagnostics.Write($"Action {actionInvokedArgs.Verb} on {actionInvokedArgs.WidgetContext.Id}.");
         Console.WriteLine($"OnActionInvoked id: {actionInvokedArgs.WidgetContext.Id} definitionId: {actionInvokedArgs.WidgetContext.DefinitionId}");
 
-        WidgetInstances[actionInvokedArgs.WidgetContext.Id].OnActionInvoked(actionInvokedArgs);
+        if (!WidgetInstances.TryGetValue(actionInvokedArgs.WidgetContext.Id, out var widget))
+        {
+            RecoverRunningWidgets();
+            WidgetInstances.TryGetValue(actionInvokedArgs.WidgetContext.Id, out widget);
+        }
+
+        if (widget is null)
+        {
+            ProviderDiagnostics.Write($"Action ignored because widget {actionInvokedArgs.WidgetContext.Id} could not be recovered.");
+            return;
+        }
+
+        widget.OnActionInvoked(actionInvokedArgs);
     }
 
     // Handle the WidgetContextChanged call. This function is called when the context a widget
@@ -146,7 +176,8 @@ public sealed class WidgetProvider : IWidgetProvider
     public void OnWidgetContextChanged(WidgetContextChangedArgs contextChangedArgs)
     {
         Console.WriteLine($"OnWidgetContextChanged id: {contextChangedArgs.WidgetContext.Id} definitionId: {contextChangedArgs.WidgetContext.DefinitionId}");
-        WidgetInstances[contextChangedArgs.WidgetContext.Id].OnWidgetContextChanged(contextChangedArgs);
+        if (WidgetInstances.TryGetValue(contextChangedArgs.WidgetContext.Id, out var widget))
+            widget.OnWidgetContextChanged(contextChangedArgs);
     }
 
     // Handle the Activate call. This function is called when widgets host starts listening
@@ -157,10 +188,24 @@ public sealed class WidgetProvider : IWidgetProvider
     {
         Console.WriteLine($"Activate id: {widgetContext.Id} definitionId: {widgetContext.DefinitionId}");
 
-        if (!WidgetInstances.ContainsKey(widgetContext.Id))
+        if (!WidgetInstances.TryGetValue(widgetContext.Id, out var widget))
         {
-            throw new Exception($"Activate called for unknown ");
+            RecoverRunningWidgets();
+            WidgetInstances.TryGetValue(widgetContext.Id, out widget);
         }
+
+        if (widget is null)
+        {
+            ProviderDiagnostics.Write($"Activate ignored because widget {widgetContext.Id} could not be recovered.");
+            return;
+        }
+
+        widget.Activate(widgetContext);
+        WidgetManager.GetDefault().UpdateWidget(new WidgetUpdateRequestOptions(widgetContext.Id)
+        {
+            Data = widget.GetDataForWidget(),
+            CustomState = widget.State
+        });
     }
 
     // Handle the Deactivate call. This function is called when widgets host stops listening
@@ -170,6 +215,7 @@ public sealed class WidgetProvider : IWidgetProvider
     public void Deactivate(string widgetId)
     {
         Console.WriteLine($"Deactivate id: {widgetId}");
-        WidgetInstances[widgetId].Deactivate();
+        if (WidgetInstances.TryGetValue(widgetId, out var widget))
+            widget.Deactivate();
     }
 }

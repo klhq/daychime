@@ -3,6 +3,8 @@
   "finishLabel": "Expected finish",
   "clockInNow": "Clock in now",
   "editTime": "Edit time",
+  "clockInTimeLabel": "Clock-in time",
+  "invalidTime": "Enter a valid time, for example 09:00.",
   "saveChanges": "Save changes",
   "clear": "Clear",
   "confirmClear": "Clear today's entry?",
