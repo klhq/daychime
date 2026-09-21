@@ -3,6 +3,7 @@ using System;
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Windows.Storage;
 using Windows.UI.Notifications;
 
 namespace CsConsoleWidgetProvider;
@@ -32,8 +33,9 @@ internal sealed class WorkdayWidget : WidgetImplBase
             case "saveTime":
                 using (var data = JsonDocument.Parse(args.Data))
                 {
+                    SaveTimeFormatPreference(data.RootElement);
                     if (data.RootElement.TryGetProperty("clockIn", out var time) &&
-                        TimeOnly.TryParseExact(time.GetString(), "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsed))
+                        TryParseClockIn(time.GetString(), out var parsed))
                         state = new DateTimeOffset(DateTime.Today.Add(parsed.ToTimeSpan())).ToString("O");
                 }
                 break;
@@ -53,15 +55,19 @@ internal sealed class WorkdayWidget : WidgetImplBase
         var effectiveState = GetClockInState(State);
         var clockedIn = DateTimeOffset.TryParse(effectiveState, out var start);
         var finish = clockedIn ? start.AddHours(9) : default;
+        var use24Hour = GetUse24Hour();
+        var timeFormat = use24Hour ? "HH:mm" : CultureInfo.CurrentCulture.DateTimeFormat.ShortTimePattern;
         return new JsonObject {
             ["date"] = DateTime.Today.ToString("dddd, MMMM d", CultureInfo.CurrentCulture),
             ["clockedIn"] = clockedIn,
             ["canEdit"] = clockedIn && !confirmingClear && !isEditing,
             ["isEditing"] = clockedIn && isEditing,
             ["confirmingClear"] = confirmingClear,
-            ["clockIn"] = clockedIn ? start.ToString("HH:mm") : "--:--",
-            ["finish"] = clockedIn ? finish.ToString("HH:mm") : "--:--",
-            ["now"] = DateTimeOffset.Now.ToString("HH:mm"),
+            ["clockIn"] = clockedIn ? start.ToString(timeFormat, CultureInfo.CurrentCulture) : "--:--",
+            ["clockInValue"] = clockedIn ? start.ToString("HH:mm") : "",
+            ["finish"] = clockedIn ? finish.ToString(timeFormat, CultureInfo.CurrentCulture) : "--:--",
+            ["now"] = DateTimeOffset.Now.ToString(timeFormat, CultureInfo.CurrentCulture),
+            ["use24Hour"] = use24Hour,
             ["clockInLabel"] = GetString(strings, "clockInLabel"),
             ["finishLabel"] = GetString(strings, "finishLabel"),
             ["clockInNow"] = GetString(strings, "clockInNow"),
@@ -74,7 +80,8 @@ internal sealed class WorkdayWidget : WidgetImplBase
             ["notClockedInYet"] = GetString(strings, "notClockedInYet"),
             ["clockInHint"] = GetString(strings, "clockInHint"),
             ["nowLabel"] = GetString(strings, "nowLabel"),
-            ["cancelEdit"] = GetString(strings, "cancelEdit")
+            ["cancelEdit"] = GetString(strings, "cancelEdit"),
+            ["use24HourLabel"] = GetString(strings, "use24HourLabel")
         }.ToJsonString();
     }
 
@@ -101,6 +108,35 @@ internal sealed class WorkdayWidget : WidgetImplBase
         if (currentState.StartsWith(EditingPrefix))
             return currentState[EditingPrefix.Length..];
         return currentState;
+    }
+
+    private static bool GetUse24Hour()
+    {
+        var value = ApplicationData.Current.LocalSettings.Values["Use24Hour"];
+        return value is bool enabled
+            ? enabled
+            : CultureInfo.CurrentCulture.DateTimeFormat.ShortTimePattern.Contains('H');
+    }
+
+    private static void SaveTimeFormatPreference(JsonElement data)
+    {
+        if (data.TryGetProperty("use24Hour", out var preference))
+        {
+            var enabled = preference.ValueKind switch
+            {
+                JsonValueKind.True => true,
+                JsonValueKind.False => false,
+                JsonValueKind.String => string.Equals(preference.GetString(), "true", StringComparison.OrdinalIgnoreCase),
+                _ => GetUse24Hour()
+            };
+            ApplicationData.Current.LocalSettings.Values["Use24Hour"] = enabled;
+        }
+    }
+
+    private static bool TryParseClockIn(string value, out TimeOnly parsed)
+    {
+        return TimeOnly.TryParseExact(value, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out parsed) ||
+            TimeOnly.TryParse(value, CultureInfo.CurrentCulture, DateTimeStyles.None, out parsed);
     }
 
     private void UpdateFinishReminder()
