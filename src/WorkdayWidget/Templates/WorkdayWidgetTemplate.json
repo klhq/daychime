@@ -20,9 +20,9 @@
       "items": [
         { "type": "TextBlock", "text": "${date}", "weight": "Bolder", "size": "Medium", "wrap": true },
         { "type": "TextBlock", "text": "${nowLabel} · ${now}", "isSubtle": true, "spacing": "None" },
-        { "type": "TextBlock", "$when": "${!isEditing}", "text": "${breakSummary}", "isSubtle": true, "size": "Small", "spacing": "Small" },
+        { "type": "TextBlock", "$when": "${!isEditing && !isConfiguring}", "text": "${breakSummary}", "isSubtle": true, "size": "Small", "spacing": "Small" },
         {
-          "type": "ColumnSet", "$when": "${clockedIn && !isEditing}", "spacing": "Medium", "separator": true,
+          "type": "ColumnSet", "$when": "${clockedIn && !isEditing && !isConfiguring}", "spacing": "Medium", "separator": true,
           "columns": [
             { "type": "Column", "width": "stretch", "items": [ { "type": "TextBlock", "text": "${clockInLabel}", "isSubtle": true, "size": "Small" }, { "type": "TextBlock", "text": "${clockIn}", "size": "ExtraLarge", "weight": "Bolder", "spacing": "None" } ] },
             { "type": "Column", "width": "stretch", "items": [ { "type": "TextBlock", "text": "${finishLabel}", "isSubtle": true, "size": "Small" }, { "type": "TextBlock", "text": "${finish}", "size": "ExtraLarge", "weight": "Bolder", "spacing": "None" } ] }
@@ -37,7 +37,7 @@
         },
         { "type": "Input.Time", "$when": "${isEditing && !use24Hour}", "id": "clockIn", "label": "${editTime}", "value": "${clockInValue}", "spacing": "Medium", "separator": true },
         { "type": "Input.Text", "$when": "${isEditing && use24Hour}", "id": "clockIn", "label": "${editTime}", "placeholder": "09:00", "value": "${clockInValue}", "spacing": "Medium", "separator": true },
-        { "type": "Input.ChoiceSet", "$when": "${isEditing}", "id": "timeFormat", "label": "${timeFormatLabel}", "style": "compact", "value": "${timeFormat}", "choices": [ { "title": "${timeFormat24Hour}", "value": "24" }, { "title": "${timeFormat12Hour}", "value": "12" } ], "spacing": "Medium" },
+        { "type": "Input.ChoiceSet", "$when": "${isConfiguring}", "id": "timeFormat", "label": "${timeFormatLabel}", "style": "compact", "value": "${timeFormat}", "choices": [ { "title": "${timeFormat24Hour}", "value": "24" }, { "title": "${timeFormat12Hour}", "value": "12" } ], "spacing": "Medium", "separator": true },
         { "type": "TextBlock", "$when": "${confirmingClear}", "text": "${confirmClear}", "weight": "Bolder", "wrap": true, "spacing": "Medium", "separator": true }
       ]
     },
@@ -46,9 +46,9 @@
       "items": [
         { "type": "TextBlock", "text": "${date}", "weight": "Bolder", "size": "Large", "wrap": true },
         { "type": "TextBlock", "text": "${nowLabel} · ${now}", "isSubtle": true, "spacing": "None" },
-        { "type": "TextBlock", "$when": "${!isEditing}", "text": "${breakSummary}", "isSubtle": true, "spacing": "Small" },
+        { "type": "TextBlock", "$when": "${!isEditing && !isConfiguring}", "text": "${breakSummary}", "isSubtle": true, "spacing": "Small" },
         {
-          "type": "ColumnSet", "$when": "${clockedIn && !isEditing}", "spacing": "Large", "separator": true,
+          "type": "ColumnSet", "$when": "${clockedIn && !isEditing && !isConfiguring}", "spacing": "Large", "separator": true,
           "columns": [
             { "type": "Column", "width": "stretch", "items": [ { "type": "TextBlock", "text": "${clockInLabel}", "isSubtle": true }, { "type": "TextBlock", "text": "${clockIn}", "size": "ExtraLarge", "weight": "Bolder", "spacing": "None" } ] },
             { "type": "Column", "width": "stretch", "items": [ { "type": "TextBlock", "text": "${finishLabel}", "isSubtle": true }, { "type": "TextBlock", "text": "${finish}", "size": "ExtraLarge", "weight": "Bolder", "spacing": "None" } ] }
@@ -63,7 +63,7 @@
         },
         { "type": "Input.Time", "$when": "${isEditing && !use24Hour}", "id": "clockIn", "label": "${editTime}", "value": "${clockInValue}", "spacing": "Large", "separator": true },
         { "type": "Input.Text", "$when": "${isEditing && use24Hour}", "id": "clockIn", "label": "${editTime}", "placeholder": "09:00", "value": "${clockInValue}", "spacing": "Large", "separator": true },
-        { "type": "Input.ChoiceSet", "$when": "${isEditing}", "id": "timeFormat", "label": "${timeFormatLabel}", "style": "compact", "value": "${timeFormat}", "choices": [ { "title": "${timeFormat24Hour}", "value": "24" }, { "title": "${timeFormat12Hour}", "value": "12" } ], "spacing": "Medium" },
+        { "type": "Input.ChoiceSet", "$when": "${isConfiguring}", "id": "timeFormat", "label": "${timeFormatLabel}", "style": "compact", "value": "${timeFormat}", "choices": [ { "title": "${timeFormat24Hour}", "value": "24" }, { "title": "${timeFormat12Hour}", "value": "12" } ], "spacing": "Medium", "separator": true },
         { "type": "TextBlock", "$when": "${confirmingClear}", "text": "${confirmClear}", "weight": "Bolder", "wrap": true, "spacing": "Large", "separator": true }
       ]
     }
@@ -71,9 +71,12 @@
   "actions": [
     { "type": "Action.Execute", "$when": "${!clockedIn}", "title": "${clockInNow}", "verb": "clockIn", "style": "positive" },
     { "type": "Action.Execute", "$when": "${canEdit && $host.widgetSize != 'small'}", "title": "✎  ${editTime}", "verb": "edit" },
+    { "type": "Action.Execute", "$when": "${canEdit && $host.widgetSize != 'small'}", "title": "⚙  ${settings}", "verb": "settings" },
     { "type": "Action.Execute", "$when": "${canEdit && $host.widgetSize != 'small'}", "title": "×  ${clear}", "verb": "askClear", "style": "destructive" },
     { "type": "Action.Execute", "$when": "${isEditing && $host.widgetSize != 'small'}", "title": "${saveChanges}", "verb": "saveTime", "style": "positive" },
     { "type": "Action.Execute", "$when": "${isEditing && $host.widgetSize != 'small'}", "title": "${cancelEdit}", "verb": "cancelEdit" },
+    { "type": "Action.Execute", "$when": "${isConfiguring && $host.widgetSize != 'small'}", "title": "${saveSettings}", "verb": "saveSettings", "style": "positive" },
+    { "type": "Action.Execute", "$when": "${isConfiguring && $host.widgetSize != 'small'}", "title": "${cancelSettings}", "verb": "cancelSettings" },
     { "type": "Action.Execute", "$when": "${confirmingClear}", "title": "×  ${clear}", "verb": "clear", "style": "destructive" },
     { "type": "Action.Execute", "$when": "${confirmingClear}", "title": "${cancel}", "verb": "cancelClear" }
   ]
