@@ -88,29 +88,6 @@
 											<LightMode />
 										</ThemeResources>
 									</Definition>
-									<Definition Id="CSharp_Weather_Widget"
-										DisplayName="Sample Weather Widget (C#)"
-										Description="Weather Widget Description (C#)">
-										<Capabilities>
-											<Capability>
-												<Size Name="medium" />
-											</Capability>
-											<Capability>
-												<Size Name="large" />
-											</Capability>
-										</Capabilities>
-										<ThemeResources>
-											<Icons>
-												<Icon Path="ProviderAssets\Weather_Icon.png" />
-											</Icons>
-											<Screenshots>
-												<Screenshot Path="ProviderAssets\Weather_Screenshot.png" DisplayAltText="For accessibility" />
-											</Screenshots>
-											<!-- DarkMode and LightMode are optional -->
-											<DarkMode />
-											<LightMode />
-										</ThemeResources>
-									</Definition>
 								</Definitions>
 							</WidgetProvider>
 						</uap3:Properties>
