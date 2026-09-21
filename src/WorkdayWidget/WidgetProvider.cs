@@ -27,13 +27,22 @@ public sealed class WidgetProvider : IWidgetProvider
                 var widgetManager = WidgetManager.GetDefault();
                 foreach (var widgetInfo in widgetManager.GetWidgetInfos())
                 {
+                    ProviderDiagnostics.Write($"Recovering widget {widgetInfo.WidgetContext.Id} ({widgetInfo.WidgetContext.DefinitionId}).");
                     var context = widgetInfo.WidgetContext;
                     if (!WidgetInstances.ContainsKey(context.Id))
                     {
                         if (WidgetImpls.ContainsKey(context.DefinitionId))
                         {
                             // Need to recover this instance
-                            WidgetInstances[context.Id] = WidgetImpls[context.DefinitionId](context.Id, widgetInfo.CustomState);
+                            var widgetInstance = WidgetImpls[context.DefinitionId](context.Id, widgetInfo.CustomState);
+                            WidgetInstances[context.Id] = widgetInstance;
+                            WidgetManager.GetDefault().UpdateWidget(new WidgetUpdateRequestOptions(context.Id)
+                            {
+                                Template = widgetInstance.GetTemplateForWidget(),
+                                Data = widgetInstance.GetDataForWidget(),
+                                CustomState = widgetInstance.State
+                            });
+                            ProviderDiagnostics.Write($"Recovered content sent for {context.Id}.");
                         }
                         else
                         {
@@ -43,9 +52,9 @@ public sealed class WidgetProvider : IWidgetProvider
                     }
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // ...
+                ProviderDiagnostics.Write($"Recovery error: {ex}");
             }
             finally
             {
@@ -66,6 +75,7 @@ public sealed class WidgetProvider : IWidgetProvider
     // and you should start pushing updates.
     public void CreateWidget(WidgetContext widgetContext)
     {
+        ProviderDiagnostics.Write($"CreateWidget {widgetContext.Id} ({widgetContext.DefinitionId}).");
         Console.WriteLine($"CreateWidget id: {widgetContext.Id} definitionId: {widgetContext.DefinitionId}");
 
         if (!WidgetImpls.ContainsKey(widgetContext.DefinitionId))
@@ -88,6 +98,7 @@ public sealed class WidgetProvider : IWidgetProvider
         Console.WriteLine($"---Custom State---\n{options.CustomState}\n---\n");
 
         WidgetManager.GetDefault().UpdateWidget(options);
+        ProviderDiagnostics.Write($"Initial update sent for {widgetContext.Id}.");
     }
 
     // Handle the DeleteWidget call. This is notifying you that
@@ -121,6 +132,7 @@ public sealed class WidgetProvider : IWidgetProvider
     // For example: clicking a button or submitting input.
     public void OnActionInvoked(WidgetActionInvokedArgs actionInvokedArgs)
     {
+        ProviderDiagnostics.Write($"Action {actionInvokedArgs.Verb} on {actionInvokedArgs.WidgetContext.Id}.");
         Console.WriteLine($"OnActionInvoked id: {actionInvokedArgs.WidgetContext.Id} definitionId: {actionInvokedArgs.WidgetContext.DefinitionId}");
 
         WidgetInstances[actionInvokedArgs.WidgetContext.Id].OnActionInvoked(actionInvokedArgs);
