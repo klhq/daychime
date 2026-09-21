@@ -1,3 +1,3 @@
 {
-  "clockInLabel": "上班打卡", "finishLabel": "預計下班", "clockInNow": "現在打卡", "editTime": "修改上班時間", "saveChanges": "儲存變更", "clear": "清除", "confirmClear": "要清除今天的打卡紀錄嗎？", "cancel": "取消", "breakSummary": "工作 8 小時 + 休息 1 小時", "finishNotificationTitle": "上班打卡", "finishNotificationBody": "預計下班時間 {0} 已到。"
+  "clockInLabel": "上班打卡", "finishLabel": "預計下班", "clockInNow": "現在打卡", "editTime": "修改上班時間", "saveChanges": "儲存變更", "clear": "清除", "confirmClear": "要清除今天的打卡紀錄嗎？", "cancel": "取消", "breakSummary": "工作 8 小時 + 休息 1 小時", "notClockedInYet": "尚未打卡", "clockInHint": "現在打卡即可計算預計下班時間。", "finishNotificationTitle": "上班打卡", "finishNotificationBody": "預計下班時間 {0} 已到。"
 }

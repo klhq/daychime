@@ -60,7 +60,9 @@ internal sealed class WorkdayWidget : WidgetImplBase
             ["clear"] = GetString(strings, "clear"),
             ["confirmClear"] = GetString(strings, "confirmClear"),
             ["cancel"] = GetString(strings, "cancel"),
-            ["breakSummary"] = GetString(strings, "breakSummary")
+            ["breakSummary"] = GetString(strings, "breakSummary"),
+            ["notClockedInYet"] = GetString(strings, "notClockedInYet"),
+            ["clockInHint"] = GetString(strings, "clockInHint")
         }.ToJsonString();
     }
 

@@ -10,7 +10,8 @@
         { "type": "TextBlock", "$when": "${clockedIn}", "text": "${finishLabel}", "isSubtle": true, "spacing": "Medium" },
         { "type": "TextBlock", "$when": "${clockedIn}", "text": "${finish}", "size": "ExtraLarge", "weight": "Bolder", "spacing": "None" },
         { "type": "TextBlock", "$when": "${clockedIn}", "text": "${clockInLabel}: ${clockIn}", "isSubtle": true, "spacing": "Small" },
-        { "type": "TextBlock", "$when": "${!clockedIn}", "text": "${breakSummary}", "isSubtle": true, "wrap": true, "spacing": "Medium" }
+        { "type": "TextBlock", "$when": "${!clockedIn}", "text": "${notClockedInYet}", "size": "Medium", "weight": "Bolder", "spacing": "Medium" },
+        { "type": "TextBlock", "$when": "${!clockedIn}", "text": "${breakSummary}", "isSubtle": true, "wrap": true, "spacing": "Small" }
       ]
     },
     {
@@ -26,6 +27,15 @@
           "columns": [
             { "type": "Column", "width": "stretch", "items": [ { "type": "TextBlock", "text": "${clockInLabel}", "isSubtle": true }, { "type": "TextBlock", "text": "${clockIn}", "size": "ExtraLarge", "weight": "Bolder", "spacing": "None" } ] },
             { "type": "Column", "width": "stretch", "items": [ { "type": "TextBlock", "text": "${finishLabel}", "isSubtle": true }, { "type": "TextBlock", "text": "${finish}", "size": "ExtraLarge", "weight": "Bolder", "spacing": "None" } ] }
+          ]
+        },
+        {
+          "type": "Container",
+          "$when": "${!clockedIn}",
+          "spacing": "Large",
+          "items": [
+            { "type": "TextBlock", "text": "${notClockedInYet}", "size": "Large", "weight": "Bolder" },
+            { "type": "TextBlock", "text": "${clockInHint}", "isSubtle": true, "wrap": true, "spacing": "Small" }
           ]
         },
         { "type": "Input.Time", "$when": "${editable}", "id": "clockIn", "label": "${editTime}", "value": "${clockIn}", "spacing": "Medium" },
@@ -45,6 +55,15 @@
           "columns": [
             { "type": "Column", "width": "stretch", "items": [ { "type": "TextBlock", "text": "${clockInLabel}", "isSubtle": true }, { "type": "TextBlock", "text": "${clockIn}", "size": "ExtraLarge", "weight": "Bolder", "spacing": "None" } ] },
             { "type": "Column", "width": "stretch", "items": [ { "type": "TextBlock", "text": "${finishLabel}", "isSubtle": true }, { "type": "TextBlock", "text": "${finish}", "size": "ExtraLarge", "weight": "Bolder", "spacing": "None" } ] }
+          ]
+        },
+        {
+          "type": "Container",
+          "$when": "${!clockedIn}",
+          "spacing": "ExtraLarge",
+          "items": [
+            { "type": "TextBlock", "text": "${notClockedInYet}", "size": "ExtraLarge", "weight": "Bolder" },
+            { "type": "TextBlock", "text": "${clockInHint}", "isSubtle": true, "wrap": true, "spacing": "Small" }
           ]
         },
         { "type": "Input.Time", "$when": "${editable}", "id": "clockIn", "label": "${editTime}", "value": "${clockIn}", "spacing": "Large", "separator": true },

@@ -8,6 +8,8 @@
   "confirmClear": "Clear today's entry?",
   "cancel": "Cancel",
   "breakSummary": "8 hours work + 1 hour break",
+  "notClockedInYet": "Not clocked in yet",
+  "clockInHint": "Clock in to calculate your expected finish time.",
   "finishNotificationTitle": "Workday Widget",
   "finishNotificationBody": "Your expected finish time was {0}."
 }
