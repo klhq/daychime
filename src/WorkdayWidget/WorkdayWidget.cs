@@ -68,6 +68,7 @@ internal sealed class WorkdayWidget : WidgetImplBase
             ["finish"] = clockedIn ? finish.ToString(timeFormat, CultureInfo.CurrentCulture) : "--:--",
             ["now"] = DateTimeOffset.Now.ToString(timeFormat, CultureInfo.CurrentCulture),
             ["use24Hour"] = use24Hour,
+            ["use24HourValue"] = use24Hour ? "true" : "false",
             ["clockInLabel"] = GetString(strings, "clockInLabel"),
             ["finishLabel"] = GetString(strings, "finishLabel"),
             ["clockInNow"] = GetString(strings, "clockInNow"),

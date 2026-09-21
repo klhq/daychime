@@ -37,7 +37,7 @@
         },
         { "type": "Input.Time", "$when": "${isEditing && !use24Hour}", "id": "clockIn", "label": "${editTime}", "value": "${clockInValue}", "spacing": "Medium", "separator": true },
         { "type": "Input.Text", "$when": "${isEditing && use24Hour}", "id": "clockIn", "label": "${editTime}", "placeholder": "09:00", "value": "${clockInValue}", "spacing": "Medium", "separator": true },
-        { "type": "Input.Toggle", "$when": "${isEditing}", "id": "use24Hour", "title": "${use24HourLabel}", "value": "${use24Hour}", "valueOn": "true", "valueOff": "false", "spacing": "Medium" },
+        { "type": "Input.Toggle", "$when": "${isEditing}", "id": "use24Hour", "title": "${use24HourLabel}", "value": "${use24HourValue}", "valueOn": "true", "valueOff": "false", "spacing": "Medium" },
         { "type": "TextBlock", "$when": "${confirmingClear}", "text": "${confirmClear}", "weight": "Bolder", "wrap": true, "spacing": "Medium", "separator": true }
       ]
     },
@@ -63,7 +63,7 @@
         },
         { "type": "Input.Time", "$when": "${isEditing && !use24Hour}", "id": "clockIn", "label": "${editTime}", "value": "${clockInValue}", "spacing": "Large", "separator": true },
         { "type": "Input.Text", "$when": "${isEditing && use24Hour}", "id": "clockIn", "label": "${editTime}", "placeholder": "09:00", "value": "${clockInValue}", "spacing": "Large", "separator": true },
-        { "type": "Input.Toggle", "$when": "${isEditing}", "id": "use24Hour", "title": "${use24HourLabel}", "value": "${use24Hour}", "valueOn": "true", "valueOff": "false", "spacing": "Medium" },
+        { "type": "Input.Toggle", "$when": "${isEditing}", "id": "use24Hour", "title": "${use24HourLabel}", "value": "${use24HourValue}", "valueOn": "true", "valueOff": "false", "spacing": "Medium" },
         { "type": "TextBlock", "$when": "${confirmingClear}", "text": "${confirmClear}", "weight": "Bolder", "wrap": true, "spacing": "Large", "separator": true }
       ]
     }
