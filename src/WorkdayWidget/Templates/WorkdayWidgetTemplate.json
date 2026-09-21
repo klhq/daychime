@@ -20,9 +20,9 @@
       "items": [
         { "type": "TextBlock", "text": "${date}", "weight": "Bolder", "size": "Medium", "wrap": true },
         { "type": "TextBlock", "text": "${nowLabel} · ${now}", "isSubtle": true, "spacing": "None" },
-        { "type": "TextBlock", "text": "${breakSummary}", "isSubtle": true, "size": "Small", "spacing": "Small" },
+        { "type": "TextBlock", "$when": "${!isEditing}", "text": "${breakSummary}", "isSubtle": true, "size": "Small", "spacing": "Small" },
         {
-          "type": "ColumnSet", "$when": "${clockedIn}", "spacing": "Medium", "separator": true,
+          "type": "ColumnSet", "$when": "${clockedIn && !isEditing}", "spacing": "Medium", "separator": true,
           "columns": [
             { "type": "Column", "width": "stretch", "items": [ { "type": "TextBlock", "text": "${clockInLabel}", "isSubtle": true, "size": "Small" }, { "type": "TextBlock", "text": "${clockIn}", "size": "ExtraLarge", "weight": "Bolder", "spacing": "None" } ] },
             { "type": "Column", "width": "stretch", "items": [ { "type": "TextBlock", "text": "${finishLabel}", "isSubtle": true, "size": "Small" }, { "type": "TextBlock", "text": "${finish}", "size": "ExtraLarge", "weight": "Bolder", "spacing": "None" } ] }
@@ -46,9 +46,9 @@
       "items": [
         { "type": "TextBlock", "text": "${date}", "weight": "Bolder", "size": "Large", "wrap": true },
         { "type": "TextBlock", "text": "${nowLabel} · ${now}", "isSubtle": true, "spacing": "None" },
-        { "type": "TextBlock", "text": "${breakSummary}", "isSubtle": true, "spacing": "Small" },
+        { "type": "TextBlock", "$when": "${!isEditing}", "text": "${breakSummary}", "isSubtle": true, "spacing": "Small" },
         {
-          "type": "ColumnSet", "$when": "${clockedIn}", "spacing": "Large", "separator": true,
+          "type": "ColumnSet", "$when": "${clockedIn && !isEditing}", "spacing": "Large", "separator": true,
           "columns": [
             { "type": "Column", "width": "stretch", "items": [ { "type": "TextBlock", "text": "${clockInLabel}", "isSubtle": true }, { "type": "TextBlock", "text": "${clockIn}", "size": "ExtraLarge", "weight": "Bolder", "spacing": "None" } ] },
             { "type": "Column", "width": "stretch", "items": [ { "type": "TextBlock", "text": "${finishLabel}", "isSubtle": true }, { "type": "TextBlock", "text": "${finish}", "size": "ExtraLarge", "weight": "Bolder", "spacing": "None" } ] }
