@@ -17,3 +17,6 @@ workday-history.csv
 # .NET build outputs
 bin/
 obj/
+
+# Local MSIX install packages
+AppPackages/

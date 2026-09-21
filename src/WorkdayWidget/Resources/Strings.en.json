@@ -7,5 +7,7 @@
   "clear": "Clear",
   "confirmClear": "Clear today's entry?",
   "cancel": "Cancel",
-  "breakSummary": "8 hours work + 1 hour break"
+  "breakSummary": "8 hours work + 1 hour break",
+  "finishNotificationTitle": "Workday Widget",
+  "finishNotificationBody": "Your expected finish time was {0}."
 }

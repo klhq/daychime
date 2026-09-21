@@ -3,12 +3,15 @@ using System;
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Windows.UI.Notifications;
 
 namespace CsConsoleWidgetProvider;
 
 internal sealed class WorkdayWidget : WidgetImplBase
 {
     public static string DefinitionId => "Workday_Widget";
+    private const string FinishReminderTag = "finish-reminder";
+    private const string FinishReminderGroup = "workday";
     public WorkdayWidget(string widgetId, string startingState) : base(widgetId, startingState) { }
 
     public override void OnActionInvoked(WidgetActionInvokedArgs args)
@@ -28,6 +31,7 @@ internal sealed class WorkdayWidget : WidgetImplBase
                 }
                 break;
         }
+        UpdateFinishReminder();
         var update = new WidgetUpdateRequestOptions(Id) { Data = GetDataForWidget(), CustomState = State };
         WidgetManager.GetDefault().UpdateWidget(update);
     }
@@ -72,5 +76,36 @@ internal sealed class WorkdayWidget : WidgetImplBase
             language.StartsWith("zh-SG", StringComparison.OrdinalIgnoreCase))
             return "ms-appx:///Locales/SimplifiedChinese.json";
         return "ms-appx:///Resources/Strings.en.json";
+    }
+
+    private void UpdateFinishReminder()
+    {
+        var notifier = ToastNotificationManager.CreateToastNotifier();
+        foreach (var scheduled in notifier.GetScheduledToastNotifications())
+        {
+            if (scheduled.Tag == FinishReminderTag && scheduled.Group == FinishReminderGroup)
+                notifier.RemoveFromSchedule(scheduled);
+        }
+
+        if (!DateTimeOffset.TryParse(State, out var start))
+            return;
+
+        var finish = start.AddHours(9);
+        if (finish <= DateTimeOffset.Now)
+            return;
+
+        var strings = JsonNode.Parse(ReadPackageFileFromUri(GetStringsUri()))!.AsObject();
+        var toastXml = ToastNotificationManager.GetTemplateContent(ToastTemplateType.ToastText02);
+        var text = toastXml.GetElementsByTagName("text");
+        text[0]!.InnerText = strings["finishNotificationTitle"]!.GetValue<string>();
+        text[1]!.InnerText = string.Format(CultureInfo.CurrentCulture,
+            strings["finishNotificationBody"]!.GetValue<string>(), finish.ToString("HH:mm"));
+
+        var reminder = new ScheduledToastNotification(toastXml, finish)
+        {
+            Tag = FinishReminderTag,
+            Group = FinishReminderGroup
+        };
+        notifier.AddToSchedule(reminder);
     }
 }
