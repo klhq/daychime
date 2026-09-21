@@ -2,6 +2,8 @@
 
 An English-language Windows workday tracker.
 
+> A minimal Windows 11 workday tracker for recording a clock-in time and seeing the expected finish time at a glance.
+
 ## Current behavior
 
 - Uses an 8-hour workday plus a 1-hour break.
@@ -31,3 +33,7 @@ At the expected finish time, the tool sends one notification only. It never auto
 - `outputs/WorkdayWidget/WorkdayWidget.cs` - prior native-window prototype source.
 
 The next implementation replaces the prototype with a packaged Windows Widget Provider, using the Windows App SDK and Adaptive Cards.
+
+## License
+
+This project is available under the [MIT License](LICENSE).
