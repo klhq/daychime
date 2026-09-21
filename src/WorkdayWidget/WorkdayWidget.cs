@@ -12,6 +12,8 @@ internal sealed class WorkdayWidget : WidgetImplBase
     public static string DefinitionId => "Workday_Widget";
     private const string FinishReminderTag = "finish-reminder";
     private const string FinishReminderGroup = "workday";
+    private const string EditingPrefix = "editing|";
+    private const string ConfirmClearPrefix = "confirm-clear|";
     public WorkdayWidget(string widgetId, string startingState) : base(widgetId, startingState) { }
 
     public override void OnActionInvoked(WidgetActionInvokedArgs args)
@@ -19,8 +21,13 @@ internal sealed class WorkdayWidget : WidgetImplBase
         switch (args.Verb)
         {
             case "clockIn": state = DateTimeOffset.Now.ToString("O"); break;
-            case "askClear": state = "confirm-clear|" + State; break;
-            case "cancelClear": state = State.StartsWith("confirm-clear|") ? State[14..] : State; break;
+            case "edit":
+                if (!string.IsNullOrEmpty(State) && !State.StartsWith(EditingPrefix))
+                    state = EditingPrefix + State;
+                break;
+            case "cancelEdit": state = State.StartsWith(EditingPrefix) ? State[EditingPrefix.Length..] : State; break;
+            case "askClear": state = ConfirmClearPrefix + GetClockInState(State); break;
+            case "cancelClear": state = State.StartsWith(ConfirmClearPrefix) ? State[ConfirmClearPrefix.Length..] : State; break;
             case "clear": state = string.Empty; break;
             case "saveTime":
                 using (var data = JsonDocument.Parse(args.Data))
@@ -41,17 +48,20 @@ internal sealed class WorkdayWidget : WidgetImplBase
     public override string GetDataForWidget()
     {
         var strings = JsonNode.Parse(ReadPackageFileFromUri(GetStringsUri()))!.AsObject();
-        var confirmingClear = State.StartsWith("confirm-clear|");
-        var effectiveState = confirmingClear ? State[14..] : State;
+        var confirmingClear = State.StartsWith(ConfirmClearPrefix);
+        var isEditing = State.StartsWith(EditingPrefix);
+        var effectiveState = GetClockInState(State);
         var clockedIn = DateTimeOffset.TryParse(effectiveState, out var start);
         var finish = clockedIn ? start.AddHours(9) : default;
         return new JsonObject {
             ["date"] = DateTime.Today.ToString("dddd, MMMM d", CultureInfo.CurrentCulture),
             ["clockedIn"] = clockedIn,
-            ["editable"] = clockedIn && !confirmingClear,
+            ["canEdit"] = clockedIn && !confirmingClear && !isEditing,
+            ["isEditing"] = clockedIn && isEditing,
             ["confirmingClear"] = confirmingClear,
             ["clockIn"] = clockedIn ? start.ToString("HH:mm") : "--:--",
             ["finish"] = clockedIn ? finish.ToString("HH:mm") : "--:--",
+            ["now"] = DateTimeOffset.Now.ToString("HH:mm"),
             ["clockInLabel"] = GetString(strings, "clockInLabel"),
             ["finishLabel"] = GetString(strings, "finishLabel"),
             ["clockInNow"] = GetString(strings, "clockInNow"),
@@ -62,7 +72,9 @@ internal sealed class WorkdayWidget : WidgetImplBase
             ["cancel"] = GetString(strings, "cancel"),
             ["breakSummary"] = GetString(strings, "breakSummary"),
             ["notClockedInYet"] = GetString(strings, "notClockedInYet"),
-            ["clockInHint"] = GetString(strings, "clockInHint")
+            ["clockInHint"] = GetString(strings, "clockInHint"),
+            ["nowLabel"] = GetString(strings, "nowLabel"),
+            ["cancelEdit"] = GetString(strings, "cancelEdit")
         }.ToJsonString();
     }
 
@@ -82,6 +94,15 @@ internal sealed class WorkdayWidget : WidgetImplBase
 
     private static string GetString(JsonObject strings, string key) => strings[key]!.GetValue<string>();
 
+    private static string GetClockInState(string currentState)
+    {
+        if (currentState.StartsWith(ConfirmClearPrefix))
+            return currentState[ConfirmClearPrefix.Length..];
+        if (currentState.StartsWith(EditingPrefix))
+            return currentState[EditingPrefix.Length..];
+        return currentState;
+    }
+
     private void UpdateFinishReminder()
     {
         var notifier = ToastNotificationManager.CreateToastNotifier();
@@ -91,7 +112,7 @@ internal sealed class WorkdayWidget : WidgetImplBase
                 notifier.RemoveFromSchedule(scheduled);
         }
 
-        if (!DateTimeOffset.TryParse(State, out var start))
+        if (!DateTimeOffset.TryParse(GetClockInState(State), out var start))
             return;
 
         var finish = start.AddHours(9);

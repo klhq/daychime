@@ -7,6 +7,7 @@
       "$when": "${$host.widgetSize == 'small'}",
       "items": [
         { "type": "TextBlock", "text": "${date}", "weight": "Bolder", "size": "Small", "wrap": true },
+        { "type": "TextBlock", "text": "${nowLabel} · ${now}", "isSubtle": true, "spacing": "None" },
         { "type": "TextBlock", "$when": "${clockedIn}", "text": "${finishLabel}", "isSubtle": true, "spacing": "Medium" },
         { "type": "TextBlock", "$when": "${clockedIn}", "text": "${finish}", "size": "ExtraLarge", "weight": "Bolder", "spacing": "None" },
         { "type": "TextBlock", "$when": "${clockedIn}", "text": "${clockInLabel}: ${clockIn}", "isSubtle": true, "spacing": "Small" },
@@ -19,6 +20,7 @@
       "$when": "${$host.widgetSize == 'medium'}",
       "items": [
         { "type": "TextBlock", "text": "${date}", "weight": "Bolder", "size": "Medium", "wrap": true },
+        { "type": "TextBlock", "text": "${nowLabel} · ${now}", "isSubtle": true, "spacing": "None" },
         { "type": "TextBlock", "text": "${breakSummary}", "isSubtle": true, "spacing": "None" },
         {
           "type": "ColumnSet",
@@ -38,7 +40,7 @@
             { "type": "TextBlock", "text": "${clockInHint}", "isSubtle": true, "wrap": true, "spacing": "Small" }
           ]
         },
-        { "type": "Input.Time", "$when": "${editable}", "id": "clockIn", "label": "${editTime}", "value": "${clockIn}", "spacing": "Medium" },
+        { "type": "Input.Time", "$when": "${isEditing}", "id": "clockIn", "label": "${editTime}", "value": "${clockIn}", "spacing": "Medium", "separator": true },
         { "type": "TextBlock", "$when": "${confirmingClear}", "text": "${confirmClear}", "weight": "Bolder", "wrap": true, "spacing": "Medium" }
       ]
     },
@@ -47,6 +49,7 @@
       "$when": "${$host.widgetSize == 'large'}",
       "items": [
         { "type": "TextBlock", "text": "${date}", "weight": "Bolder", "size": "Large", "wrap": true },
+        { "type": "TextBlock", "text": "${nowLabel} · ${now}", "isSubtle": true, "spacing": "None" },
         { "type": "TextBlock", "text": "${breakSummary}", "isSubtle": true, "spacing": "None" },
         {
           "type": "ColumnSet",
@@ -66,15 +69,17 @@
             { "type": "TextBlock", "text": "${clockInHint}", "isSubtle": true, "wrap": true, "spacing": "Small" }
           ]
         },
-        { "type": "Input.Time", "$when": "${editable}", "id": "clockIn", "label": "${editTime}", "value": "${clockIn}", "spacing": "Large", "separator": true },
+        { "type": "Input.Time", "$when": "${isEditing}", "id": "clockIn", "label": "${editTime}", "value": "${clockIn}", "spacing": "Large", "separator": true },
         { "type": "TextBlock", "$when": "${confirmingClear}", "text": "${confirmClear}", "weight": "Bolder", "wrap": true, "spacing": "Large", "separator": true }
       ]
     }
   ],
   "actions": [
     { "type": "Action.Execute", "$when": "${!clockedIn}", "title": "${clockInNow}", "verb": "clockIn" },
-    { "type": "Action.Execute", "$when": "${editable && $host.widgetSize != 'small'}", "title": "${saveChanges}", "verb": "saveTime" },
-    { "type": "Action.Execute", "$when": "${editable && $host.widgetSize != 'small'}", "title": "${clear}", "verb": "askClear" },
+    { "type": "Action.Execute", "$when": "${canEdit && $host.widgetSize != 'small'}", "title": "${editTime}", "verb": "edit" },
+    { "type": "Action.Execute", "$when": "${isEditing && $host.widgetSize != 'small'}", "title": "${saveChanges}", "verb": "saveTime" },
+    { "type": "Action.Execute", "$when": "${isEditing && $host.widgetSize != 'small'}", "title": "${cancelEdit}", "verb": "cancelEdit" },
+    { "type": "Action.Execute", "$when": "${canEdit && $host.widgetSize != 'small'}", "title": "${clear}", "verb": "askClear" },
     { "type": "Action.Execute", "$when": "${confirmingClear}", "title": "${clear}", "verb": "clear" },
     { "type": "Action.Execute", "$when": "${confirmingClear}", "title": "${cancel}", "verb": "cancelClear" }
   ]
