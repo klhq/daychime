@@ -1,0 +1,11 @@
+{
+  "clockInLabel": "Clock in",
+  "finishLabel": "Expected finish",
+  "clockInNow": "Clock in now",
+  "editTime": "Edit time",
+  "saveChanges": "Save changes",
+  "clear": "Clear",
+  "confirmClear": "Clear today's entry?",
+  "cancel": "Cancel",
+  "breakSummary": "8 hours work + 1 hour break"
+}

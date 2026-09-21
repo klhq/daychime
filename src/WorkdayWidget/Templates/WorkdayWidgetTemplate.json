@@ -1,0 +1,21 @@
+{
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "type": "AdaptiveCard", "version": "1.5",
+  "body": [
+    { "type": "TextBlock", "text": "${date}", "weight": "Bolder", "size": "Medium", "wrap": true },
+    { "type": "ColumnSet", "$when": "${clockedIn}", "columns": [
+      { "type": "Column", "items": [ { "type": "TextBlock", "text": "${clockInLabel}", "isSubtle": true }, { "type": "TextBlock", "text": "${clockIn}", "size": "Large", "weight": "Bolder" } ] },
+      { "type": "Column", "items": [ { "type": "TextBlock", "text": "${finishLabel}", "isSubtle": true }, { "type": "TextBlock", "text": "${finish}", "size": "Large", "weight": "Bolder" } ] }
+    ] },
+    { "type": "Input.Time", "$when": "${editable}", "id": "clockIn", "label": "${editTime}", "value": "${clockIn}" },
+    { "type": "TextBlock", "$when": "${confirmingClear}", "text": "${confirmClear}", "weight": "Bolder", "wrap": true },
+    { "type": "TextBlock", "$when": "${!clockedIn}", "text": "${breakSummary}", "isSubtle": true }
+  ],
+  "actions": [
+    { "type": "Action.Execute", "$when": "${!clockedIn}", "title": "${clockInNow}", "verb": "clockIn" },
+    { "type": "Action.Execute", "$when": "${editable}", "title": "${saveChanges}", "verb": "saveTime" },
+    { "type": "Action.Execute", "$when": "${editable}", "title": "${clear}", "verb": "askClear" },
+    { "type": "Action.Execute", "$when": "${confirmingClear}", "title": "${clear}", "verb": "clear" },
+    { "type": "Action.Execute", "$when": "${confirmingClear}", "title": "${cancel}", "verb": "cancelClear" }
+  ]
+}
