@@ -77,13 +77,13 @@
   "actions": [
     { "type": "Action.Execute", "$when": "${!clockedIn}", "title": "${clockInNow}", "verb": "clockIn", "style": "positive" },
     { "type": "Action.Execute", "$when": "${canEdit}", "title": "✎  ${editTime}", "verb": "edit" },
-    { "type": "Action.Execute", "$when": "${canEdit && $host.widgetSize != 'small'}", "title": "⚙  ${settings}", "verb": "settings" },
-    { "type": "Action.Execute", "$when": "${canEdit}", "title": "×  ${clear}", "verb": "askClear", "style": "destructive" },
+    { "type": "Action.Execute", "$when": "${canEdit && $host.widgetSize != 'small'}", "title": "⚙  ${settings}", "verb": "settings", "mode": "secondary" },
+    { "type": "Action.Execute", "$when": "${canEdit}", "title": "×  ${clear}", "verb": "askClear", "style": "destructive", "mode": "secondary" },
     { "type": "Action.Execute", "$when": "${isEditing}", "title": "${saveChanges}", "verb": "saveTime", "style": "positive" },
-    { "type": "Action.Execute", "$when": "${isEditing}", "title": "${cancelEdit}", "verb": "cancelEdit" },
+    { "type": "Action.Execute", "$when": "${isEditing}", "title": "${cancelEdit}", "verb": "cancelEdit", "mode": "secondary" },
     { "type": "Action.Execute", "$when": "${isConfiguring && $host.widgetSize != 'small'}", "title": "${saveSettings}", "verb": "saveSettings", "style": "positive" },
-    { "type": "Action.Execute", "$when": "${isConfiguring && $host.widgetSize != 'small'}", "title": "${cancelSettings}", "verb": "cancelSettings" },
+    { "type": "Action.Execute", "$when": "${isConfiguring && $host.widgetSize != 'small'}", "title": "${cancelSettings}", "verb": "cancelSettings", "mode": "secondary" },
     { "type": "Action.Execute", "$when": "${confirmingClear}", "title": "×  ${clear}", "verb": "clear", "style": "destructive" },
-    { "type": "Action.Execute", "$when": "${confirmingClear}", "title": "${cancel}", "verb": "cancelClear" }
+    { "type": "Action.Execute", "$when": "${confirmingClear}", "title": "${cancel}", "verb": "cancelClear", "mode": "secondary" }
   ]
 }
