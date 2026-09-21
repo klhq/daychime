@@ -52,15 +52,15 @@ internal sealed class WorkdayWidget : WidgetImplBase
             ["confirmingClear"] = confirmingClear,
             ["clockIn"] = clockedIn ? start.ToString("HH:mm") : "--:--",
             ["finish"] = clockedIn ? finish.ToString("HH:mm") : "--:--",
-            ["clockInLabel"] = strings["clockInLabel"],
-            ["finishLabel"] = strings["finishLabel"],
-            ["clockInNow"] = strings["clockInNow"],
-            ["editTime"] = strings["editTime"],
-            ["saveChanges"] = strings["saveChanges"],
-            ["clear"] = strings["clear"],
-            ["confirmClear"] = strings["confirmClear"],
-            ["cancel"] = strings["cancel"],
-            ["breakSummary"] = strings["breakSummary"]
+            ["clockInLabel"] = GetString(strings, "clockInLabel"),
+            ["finishLabel"] = GetString(strings, "finishLabel"),
+            ["clockInNow"] = GetString(strings, "clockInNow"),
+            ["editTime"] = GetString(strings, "editTime"),
+            ["saveChanges"] = GetString(strings, "saveChanges"),
+            ["clear"] = GetString(strings, "clear"),
+            ["confirmClear"] = GetString(strings, "confirmClear"),
+            ["cancel"] = GetString(strings, "cancel"),
+            ["breakSummary"] = GetString(strings, "breakSummary")
         }.ToJsonString();
     }
 
@@ -77,6 +77,8 @@ internal sealed class WorkdayWidget : WidgetImplBase
             return "ms-appx:///Locales/SimplifiedChinese.json";
         return "ms-appx:///Resources/Strings.en.json";
     }
+
+    private static string GetString(JsonObject strings, string key) => strings[key]!.GetValue<string>();
 
     private void UpdateFinishReminder()
     {
