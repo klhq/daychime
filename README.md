@@ -1,24 +1,11 @@
 # Workday Widget
 
-An English-language Windows workday tracker.
-
-> A minimal Windows 11 workday tracker for recording a clock-in time and seeing the expected finish time at a glance.
-
-## Current behavior
-
-- Uses a configurable workday length (default 9 hours from clock-in to expected finish).
-- Records today's clock-in time.
-- Calculates the expected finish time.
-- Lets the user edit the clock-in time or clear today's record.
-- Keeps a local CSV history.
-
-## Target experience
-
-The planned primary interface is a native Windows 11 Widgets Board card, opened with `Win + W`:
+A minimal Windows 11 Widgets Board card for tracking your workday: clock in with one tap, see your expected finish time at a glance, and get reminded when it arrives.
 
 ```text
-Mon, Sep 21
-Now 14:32                            24h
+Tue, Sep 22
+Now 11:51 AM                         12h
+9-hour workday
 
 Clock in                    09:07
 Expected finish             18:07
@@ -28,23 +15,28 @@ Clear today's record
 [ Edit time ]
 ```
 
-The footer never carries more than two buttons at once. `Clear` lives as a
-small always-visible link under the stats instead of a footer button, and the
-12/24-hour preference is a one-tap chip next to "Now" instead of a separate
-settings screen — it never interrupts the clock-in flow.
+## Features
 
-At the expected finish time, the tool sends one notification only. It never automatically clocks out or clears a record. On workstation unlock, it refreshes the current day and sends a missed finish-time notification once when needed.
+- **One-tap clock-in** — press "Clock in now" and the current time is recorded for the day.
+- **Expected finish, always visible** — computed from clock-in time plus a configurable workday length.
+- **Configurable workday length** — a small accent-colored chip cycles through presets (8, 8.5, 9, 9.5, 10 hours); default is 9.
+- **Auto clock-in on unlock** (opt-in) — clocks you in automatically the first time you unlock your PC each day, so the widget never needs to be opened on a normal day.
+- **Edit or clear** — fix a wrong clock-in time, or clear today's record entirely (with a confirm step).
+- **12/24-hour display** — a one-tap chip next to "Now", independent of the clock-in flow.
+- **Finish-time reminder** — one toast notification when your expected finish time arrives; the widget never auto clocks-out or auto-clears.
+- **Timezone-safe** — clock-in and finish times always display in your machine's *current* local timezone, even if it changed after you clocked in (travel, a VM); a small note appears only when that adjustment actually happened.
+- **Daily reset** — crossing into a new day clears the previous day's clock-in automatically.
+- **Small / medium / large layouts**, light and dark themes.
+- **Localized**: English, Traditional Chinese, Simplified Chinese (follows Windows' display language automatically).
 
-An optional "Auto clock in on unlock" preference clocks the user in automatically the first time they unlock their PC each day, so the widget never needs to be opened at all on a normal day. It's off by default; a small accent-colored line under the "Not clocked in yet" hint toggles it with one tap (the same low-friction pattern as the 12/24-hour chip) instead of adding a settings screen. Once a clock-in exists for the day — whether automatic or manual — unlocking again does nothing, and it never overwrites an edited or already-recorded time.
+## Design principles
 
-The workday length itself is also configurable: on medium and large sizes, a small accent-colored "9-hour workday" line cycles through a handful of presets (8, 8.5, 9, 9.5, 10 hours) with one tap, the same pattern as the other in-body toggles. Clock-in and finish times are stored and computed against the machine's current local timezone, so a clock-in recorded before a timezone change (travel, a VM) still displays and fires its reminder correctly — with a small note appearing only when that adjustment actually happened.
+No dedicated settings screen. Adaptive Cards' action model doesn't have room for one on this host anyway, and a widget you check daily shouldn't behave like a settings form. Every preference (time format, auto clock-in, workday length) lives as a small in-body, one-tap chip instead — visible when relevant, silent otherwise. The footer never carries more than two buttons at once.
 
 ## Repository contents
 
-- `outputs/WorkdayWidget/WorkdayWidget.ps1` - current local prototype.
-- `outputs/WorkdayWidget/WorkdayWidget.cs` - prior native-window prototype source.
-
-The next implementation replaces the prototype with a packaged Windows Widget Provider, using the Windows App SDK and Adaptive Cards.
+- `src/WorkdayWidget/` — the shipped Windows Widget Provider (Windows App SDK, Adaptive Cards 1.5, COM widget provider model).
+- `outputs/WorkdayWidget/` — an earlier local prototype (a standalone script/native-window version) kept for reference; not part of the current implementation.
 
 ## License
 
