@@ -10,4 +10,4 @@ Daychime does not use advertising, analytics, tracking technologies, user accoun
 
 Microsoft may collect information when you download, install, or use the app through the Microsoft Store. That information is governed by [Microsoft's Privacy Statement](https://privacy.microsoft.com/privacystatement).
 
-If you have questions about this Privacy Policy, please contact the developer by [opening an issue](https://github.com/klhq/workday-widget/issues).
+If you have questions about this Privacy Policy, please contact the developer by [opening an issue](https://github.com/klhq/daychime/issues).
