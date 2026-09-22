@@ -19,14 +19,14 @@ For each listing language, upload the same set of real Daychime screenshots in t
 
 Upload these four screenshots in this order:
 
-1. The normal clocked-in state, showing clock-in time and expected finish time.
+1. The normal clocked-in state, showing clock-in time and estimated finish time.
 2. The work-hours control, showing a selected workday duration.
 3. The edit-time state, showing the editable clock-in field.
-4. The unlock auto-clock-in control, with the setting turned on or off.
+4. The auto clock-in setting, showing the first eligible unlock time.
 
 ### English captions
 
-1. See your clock-in time and expected finish time at a glance.
+1. See your clock-in time and estimated finish time at a glance.
 2. Choose a workday length from 8 to 10 hours.
 3. Correct today's clock-in time whenever you need to.
 4. Optionally clock in automatically when you first unlock your PC each day.
@@ -55,7 +55,7 @@ A focused Windows 11 widget for tracking your workday and seeing when you can fi
 
 Daychime is a focused Windows 11 widget for keeping your workday visible without opening a timesheet or another app.
 
-Clock in with one tap and see your expected finish time immediately. Choose the workday length that fits your schedule, make a correction if you clocked in at the wrong time, and get a reminder when your expected finish time arrives.
+Clock in with one tap and see your estimated finish time immediately. Choose the workday length that fits your schedule, make a correction if you clocked in at the wrong time, and get a reminder when your estimated finish time arrives.
 
 Your data stays on your device. Daychime has no account, no advertising, and no tracking.
 
@@ -63,13 +63,13 @@ Your data stays on your device. Daychime has no account, no advertising, and no 
 
 Clock in with one tap
 
-Expected finish time at a glance
+Estimated finish time at a glance
 
 Workday presets from 8 to 10 hours
 
-Optional auto clock-in on unlock
+Optional auto clock-in after your chosen time
 
-Edit or clear today's record
+Edit or clear the current shift
 
 12-hour and 24-hour time formats
 

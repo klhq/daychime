@@ -1,19 +1,17 @@
 # Captures the real, live Daychime card as it renders on the Windows 11
 # Widgets board, for use as the "Add widgets" gallery preview image.
 #
-# The manifest (Package.appxmanifest) references exactly two screenshots:
+# The manifest (Package.appxmanifest) references one screenshot:
 #   ProviderAssets\Daychime_Screenshot_Light.png
-#   ProviderAssets\Daychime_Screenshot_Dark.png
 # This script replaces hand-simulated mockups with an actual screen capture of
 # the pinned widget, so the "Add widgets" preview always matches the real card.
 #
 # Usage:
-#   1. Set Windows to the light or dark theme you want to capture
-#      (Settings > Personalization > Colors).
+#   1. Set Windows to the light theme (Settings > Personalization > Colors).
 #   2. Press Win+W to open the Widgets board.
 #   3. Make sure the Daychime is pinned and sized/state the way you want
 #      it to appear in the gallery (typically: medium size, clocked in).
-#   4. Run this script with -Theme Light or -Theme Dark. It finds the Widgets
+#   4. Run this script. It finds the Widgets
 #      board window, captures it, and asks you to click-drag a crop rectangle
 #      around just the widget card.
 #   5. Review the saved PNG in ProviderAssets before committing.
@@ -24,11 +22,7 @@
 # the real render, not a redrawn approximation.
 
 [CmdletBinding()]
-param(
-    [Parameter(Mandatory = $true)]
-    [ValidateSet("Light", "Dark")]
-    [string]$Theme
-)
+param()
 
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
@@ -74,13 +68,13 @@ $g.CopyFromScreen($rect.Left, $rect.Top, 0, 0, (New-Object System.Drawing.Size $
 $g.Dispose()
 
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-$fullCapturePath = Join-Path $env:TEMP "daychime-widget-board-$Theme.png"
+$fullCapturePath = Join-Path $env:TEMP "daychime-widget-board-light.png"
 $bmp.Save($fullCapturePath, [System.Drawing.Imaging.ImageFormat]::Png)
 $bmp.Dispose()
 
 Write-Output "Captured the full Widgets board to: $fullCapturePath"
 Write-Output "Open it, crop tightly to just the Daychime card, and save the crop as:"
-$destination = Join-Path $PSScriptRoot "..\ProviderAssets\Daychime_Screenshot_$Theme.png"
-Write-Output "  $((Resolve-Path (Split-Path $destination)).Path)\Daychime_Screenshot_$Theme.png"
+$destination = Join-Path $PSScriptRoot "..\ProviderAssets\Daychime_Screenshot_Light.png"
+Write-Output "  $((Resolve-Path (Split-Path $destination)).Path)\Daychime_Screenshot_Light.png"
 Write-Output ""
 Write-Output "(Snipping Tool / Paint / PowerToys Image Resizer all work fine for the crop step.)"

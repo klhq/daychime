@@ -34,7 +34,7 @@
 		  EntryPoint="$targetentrypoint$">
 			<uap:VisualElements
 			  DisplayName="Daychime"
-			  Description="Clock in and see your expected finish time."
+			  Description="Clock in and see your estimated finish time."
 			  BackgroundColor="transparent"
 			  Square150x150Logo="Assets\Square150x150Logo.png"
 			  Square44x44Logo="Assets\Square44x44Logo.png">
@@ -64,7 +64,7 @@
 								<Definitions>
                                     <Definition Id="Daychime_Widget" AllowMultiple="false"
 										DisplayName="Daychime"
-										Description="Clock in and see your expected finish time.">
+										Description="Clock in and see your estimated finish time.">
 										<Capabilities>
 											<Capability>
 												<Size Name="small" />
@@ -87,9 +87,6 @@
 												<Icons>
 													<Icon Path="ProviderAssets\Daychime_Icon_Dark.png" />
 												</Icons>
-												<Screenshots>
-													<Screenshot Path="ProviderAssets\Daychime_Screenshot_Dark.png" DisplayAltText="Daychime preview" />
-												</Screenshots>
 											</DarkMode>
 											<LightMode>
 												<Icons>

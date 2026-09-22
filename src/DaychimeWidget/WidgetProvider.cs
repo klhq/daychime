@@ -216,7 +216,23 @@ public sealed class WidgetProvider : IWidgetProvider
             return;
         }
 
-        widget.OnActionInvoked(actionInvokedArgs);
+        try
+        {
+            widget.OnActionInvoked(actionInvokedArgs);
+        }
+        catch (Exception ex)
+        {
+            // The host must always get its COM call back; otherwise the widget appears frozen.
+            ProviderDiagnostics.Write($"Action failed for {actionInvokedArgs.WidgetContext.Id}: {ex}");
+            try
+            {
+                SendWidgetUpdate(widget);
+            }
+            catch (Exception updateEx)
+            {
+                ProviderDiagnostics.Write($"Recovery update failed for {actionInvokedArgs.WidgetContext.Id}: {updateEx}");
+            }
+        }
     }
 
     // Handle the WidgetContextChanged call. This function is called when the context a widget

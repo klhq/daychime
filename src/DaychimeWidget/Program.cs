@@ -25,6 +25,8 @@ namespace DaychimeWidget
                     ProviderDiagnostics.Write("COM provider registered.");
                     Console.WriteLine("Widget Provider registered.");
 
+                    RefreshExistingWidgets();
+
                     var existingWidgets = WidgetManager.GetDefault().GetWidgetIds();
                     if (existingWidgets != null)
                     {
@@ -48,5 +50,32 @@ namespace DaychimeWidget
                 Console.WriteLine("Not being launched to service Widget Provider... exiting.");
             }
         }
+
+    private static void RefreshExistingWidgets()
+    {
+        try
+        {
+            var widgetManager = WidgetManager.GetDefault();
+            foreach (var widgetInfo in widgetManager.GetWidgetInfos() ?? [])
+            {
+                var context = widgetInfo.WidgetContext;
+                if (context?.DefinitionId != Daychime.DefinitionId)
+                    continue;
+
+                var widget = new Daychime(context.Id, widgetInfo.CustomState);
+                widgetManager.UpdateWidget(new WidgetUpdateRequestOptions(context.Id)
+                {
+                    Data = widget.GetDataForWidget(),
+                    CustomState = widget.State
+                });
+                ProviderDiagnostics.Write($"Refreshed existing widget {context.Id}.");
+            }
+        }
+        catch (Exception ex)
+        {
+            ProviderDiagnostics.Write($"Existing widget refresh failed: {ex}");
+        }
+    }
+
     }
 }
