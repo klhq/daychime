@@ -18,6 +18,7 @@
         { "type": "TextBlock", "$when": "${canEdit}", "text": "${finishLabel}", "isSubtle": true, "spacing": "Medium" },
         { "type": "TextBlock", "$when": "${canEdit}", "text": "${finish}", "size": "ExtraLarge", "weight": "Bolder", "spacing": "None" },
         { "type": "TextBlock", "$when": "${canEdit}", "text": "${clockInLabel} ${clockIn}", "isSubtle": true, "spacing": "Small" },
+        { "type": "TextBlock", "$when": "${timezoneChanged}", "text": "${timezoneAdjustedNote}", "isSubtle": true, "size": "Small", "wrap": true, "spacing": "Small" },
         { "type": "Container", "$when": "${canEdit}", "spacing": "Small", "selectAction": { "type": "Action.Execute", "verb": "askClear", "title": "${clearLink}" },
           "items": [ { "type": "TextBlock", "text": "${clearLink}", "size": "Small", "color": "Attention", "wrap": true } ] },
         { "type": "TextBlock", "$when": "${!clockedIn}", "text": "${notClockedInYet}", "size": "Medium", "weight": "Bolder", "spacing": "Medium" },
@@ -50,6 +51,7 @@
             { "type": "Column", "width": "stretch", "items": [ { "type": "TextBlock", "text": "${finishLabel}", "isSubtle": true, "size": "Small" }, { "type": "TextBlock", "text": "${finish}", "size": "ExtraLarge", "weight": "Bolder", "spacing": "None" } ] }
           ]
         },
+        { "type": "TextBlock", "$when": "${timezoneChanged}", "text": "${timezoneAdjustedNote}", "isSubtle": true, "size": "Small", "wrap": true, "spacing": "Small" },
         { "type": "Container", "$when": "${canEdit}", "spacing": "Small", "selectAction": { "type": "Action.Execute", "verb": "askClear", "title": "${clearLink}" },
           "items": [ { "type": "TextBlock", "text": "${clearLink}", "size": "Small", "color": "Attention", "wrap": true } ] },
         {
@@ -87,6 +89,7 @@
             { "type": "Column", "width": "stretch", "items": [ { "type": "TextBlock", "text": "${finishLabel}", "isSubtle": true }, { "type": "TextBlock", "text": "${finish}", "size": "ExtraLarge", "weight": "Bolder", "spacing": "None" } ] }
           ]
         },
+        { "type": "TextBlock", "$when": "${timezoneChanged}", "text": "${timezoneAdjustedNote}", "isSubtle": true, "size": "Small", "wrap": true, "spacing": "Small" },
         { "type": "Container", "$when": "${canEdit}", "spacing": "Small", "selectAction": { "type": "Action.Execute", "verb": "askClear", "title": "${clearLink}" },
           "items": [ { "type": "TextBlock", "text": "${clearLink}", "size": "Small", "color": "Attention", "wrap": true } ] },
         {

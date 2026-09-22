@@ -61,7 +61,13 @@ internal sealed class WorkdayWidget : WidgetImplBase
         var hasTimeError = State.StartsWith(EditingErrorPrefix);
         var effectiveState = GetClockInState(State);
         var clockedIn = DateTimeOffset.TryParse(effectiveState, out var start);
-        if (clockedIn) start = start.ToLocalTime();
+        var timezoneChanged = false;
+        if (clockedIn)
+        {
+            var originalOffset = start.Offset;
+            start = start.ToLocalTime();
+            timezoneChanged = originalOffset != start.Offset;
+        }
         var finish = clockedIn ? start.AddHours(9) : default;
         var use24Hour = GetUse24Hour();
         var timeFormat = use24Hour ? "HH:mm" : CultureInfo.CurrentCulture.DateTimeFormat.ShortTimePattern;
@@ -73,6 +79,7 @@ internal sealed class WorkdayWidget : WidgetImplBase
             ["hasTimeError"] = clockedIn && hasTimeError,
             ["confirmingClear"] = confirmingClear,
             ["showFormatToggle"] = !isEditing && !confirmingClear,
+            ["timezoneChanged"] = timezoneChanged,
             ["clockIn"] = clockedIn ? start.ToString(timeFormat, CultureInfo.CurrentCulture) : "--:--",
             ["clockInValue"] = clockedIn ? start.ToString("HH:mm") : "",
             ["finish"] = clockedIn ? finish.ToString(timeFormat, CultureInfo.CurrentCulture) : "--:--",
@@ -91,6 +98,7 @@ internal sealed class WorkdayWidget : WidgetImplBase
             ["saveChanges"] = GetString(strings, "saveChanges"),
             ["clear"] = GetString(strings, "clear"),
             ["clearLink"] = GetString(strings, "clearLink"),
+            ["timezoneAdjustedNote"] = GetString(strings, "timezoneAdjustedNote"),
             ["confirmClear"] = GetString(strings, "confirmClear"),
             ["cancel"] = GetString(strings, "cancel"),
             ["breakSummary"] = GetString(strings, "breakSummary"),

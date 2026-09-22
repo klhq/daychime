@@ -8,6 +8,7 @@
   "saveChanges": "Save changes",
   "clear": "Clear",
   "clearLink": "Clear today's record",
+  "timezoneAdjustedNote": "Clock-in time adjusted for your current timezone.",
   "confirmClear": "Clear today's entry?",
   "cancel": "Cancel",
   "breakSummary": "8 hours work + 1 hour break",
