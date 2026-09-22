@@ -24,6 +24,12 @@ A minimal Windows 11 Widgets Board card for tracking your workday: clock in with
 
 No dedicated settings screen. Adaptive Cards' action model doesn't have room for one on this host anyway, and a widget you check daily shouldn't behave like a settings form. Every preference (time format, auto clock-in, workday length) lives as a small in-body, one-tap chip instead — visible when relevant, silent otherwise. The footer never carries more than two buttons at once.
 
+## Install
+
+For a production release signed by a trusted provider, users download [WorkdayWidget.appinstaller](https://github.com/klhq/workday-widget/releases/latest/download/WorkdayWidget.appinstaller) and open it with Windows App Installer. It installs the widget and checks for updates automatically.
+
+The current self-signed release is for local development and managed test devices only. Do not share it as a public installer: Windows will block a package whose signer is not already trusted.
+
 ## Build and install
 
 This is a Windows Widget provider, so it cannot be run inside a normal Docker container: the Widget host, MSIX deployment, and certificate store are Windows integrations. Instead, the repository provides a Docker-like single build entry point that makes the Windows build reproducible and discoverable.
@@ -57,18 +63,7 @@ To package without signing or installing:
 ./scripts/Build.ps1 -Configuration Release -Architecture x64 -Package
 ```
 
-## One-click installs and updates
-
-For releases, use the Windows-native App Installer file rather than a custom `Setup.exe`. It opens the standard Windows install UI, keeps the app packaged correctly, and checks for updates automatically. Once a release has been published, users can install it from:
-
-[Install Workday Widget](ms-appinstaller:?source=https%3A%2F%2Fgithub.com%2Fklhq%2Fworkday-widget%2Freleases%2Flatest%2Fdownload%2FWorkdayWidget.appinstaller)
-
-Pushing a version tag such as `v1.0.30` publishes the MSIX and App Installer file through GitHub Actions. Before the first release, add these repository secrets:
-
-- `PACKAGE_CERTIFICATE_BASE64` — the Base64 contents of the signing `.pfx` certificate.
-- `PACKAGE_CERTIFICATE_PASSWORD` — its password.
-
-The certificate publisher must remain `CN=Workday Widget`, matching the app manifest. For public distribution, use a publicly trusted code-signing certificate; a self-signed development certificate requires every user to trust it manually.
+Release and signing instructions for maintainers are in [docs/RELEASING.md](docs/RELEASING.md).
 
 Then press `Win + W`, open "Add widgets," and pin Workday Widget.
 

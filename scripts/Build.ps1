@@ -12,7 +12,8 @@ param(
     [switch]$Clean,
     [string]$OutputDirectory,
     [string]$AppInstallerUri,
-    [string]$PackageUri
+    [string]$PackageUri,
+    [string]$TimestampServer = 'http://timestamp.digicert.com'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -95,7 +96,12 @@ try {
 
     if ($CertificateThumbprint) {
         $signTool = Find-SignTool
-        & $signTool sign /fd SHA256 /sha1 $CertificateThumbprint /s My $msix.FullName
+        $signArguments = @('sign', '/fd', 'SHA256', '/sha1', $CertificateThumbprint, '/s', 'My')
+        if ($TimestampServer) {
+            $signArguments += @('/tr', $TimestampServer, '/td', 'SHA256')
+        }
+        $signArguments += $msix.FullName
+        & $signTool @signArguments
         if ($LASTEXITCODE -ne 0) { throw "Signing failed with exit code $LASTEXITCODE." }
     }
 

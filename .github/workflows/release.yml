@@ -19,10 +19,24 @@ jobs:
     env:
       APPINSTALLER_URI: https://github.com/klhq/workday-widget/releases/latest/download/WorkdayWidget.appinstaller
       PACKAGE_URI: https://github.com/klhq/workday-widget/releases/latest/download/WorkdayWidget.msix
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.tag || github.ref }}
+
+      - name: Verify package version
+        shell: pwsh
+        run: |
+          $tagVersion = $env:RELEASE_TAG -replace '^v', ''
+          if ($tagVersion -notmatch '^\d+\.\d+\.\d+$') {
+            throw 'Release tags must use vMAJOR.MINOR.PATCH, for example v1.0.30.'
+          }
+          [xml]$manifest = Get-Content 'src/WorkdayWidget/Package.appxmanifest'
+          $expectedVersion = "$tagVersion.0"
+          if ($manifest.Package.Identity.Version -ne $expectedVersion) {
+            throw "Tag $env:RELEASE_TAG requires manifest version $expectedVersion; found $($manifest.Package.Identity.Version)."
+          }
 
       - name: Import signing certificate
         shell: pwsh
