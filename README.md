@@ -35,6 +35,8 @@ settings screen — it never interrupts the clock-in flow.
 
 At the expected finish time, the tool sends one notification only. It never automatically clocks out or clears a record. On workstation unlock, it refreshes the current day and sends a missed finish-time notification once when needed.
 
+An optional "Auto clock in on unlock" preference clocks the user in automatically the first time they unlock their PC each day, so the widget never needs to be opened at all on a normal day. It's off by default; a small accent-colored line under the "Not clocked in yet" hint toggles it with one tap (the same low-friction pattern as the 12/24-hour chip) instead of adding a settings screen. Once a clock-in exists for the day — whether automatic or manual — unlocking again does nothing, and it never overwrites an edited or already-recorded time.
+
 ## Repository contents
 
 - `outputs/WorkdayWidget/WorkdayWidget.ps1` - current local prototype.

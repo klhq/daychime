@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using CsConsoleWidgetProvider;
+using Microsoft.Win32;
 using Microsoft.Windows.Widgets.Providers;
 using System;
 using System.Collections.Generic;
@@ -15,6 +16,49 @@ public sealed class WidgetProvider : IWidgetProvider
     public WidgetProvider()
     {
         RecoverRunningWidgets();
+        RegisterForSessionUnlock();
+    }
+
+    private static bool HaveRegisteredSessionEvents { get; set; } = false;
+    private static void RegisterForSessionUnlock()
+    {
+        if (HaveRegisteredSessionEvents)
+            return;
+
+        try
+        {
+            SystemEvents.SessionSwitch += OnSessionSwitch;
+            HaveRegisteredSessionEvents = true;
+            ProviderDiagnostics.Write("Registered for session unlock notifications.");
+        }
+        catch (Exception ex)
+        {
+            ProviderDiagnostics.Write($"Failed to register for session unlock notifications: {ex}");
+        }
+    }
+
+    private static void OnSessionSwitch(object sender, SessionSwitchEventArgs e)
+    {
+        if (e.Reason != SessionSwitchReason.SessionUnlock)
+            return;
+
+        ProviderDiagnostics.Write("Session unlock detected.");
+        foreach (var widget in WidgetInstances.Values)
+        {
+            try
+            {
+                widget.OnSessionUnlock();
+                WidgetManager.GetDefault().UpdateWidget(new WidgetUpdateRequestOptions(widget.Id)
+                {
+                    Data = widget.GetDataForWidget(),
+                    CustomState = widget.State
+                });
+            }
+            catch (Exception ex)
+            {
+                ProviderDiagnostics.Write($"Session unlock handling error for {widget.Id}: {ex}");
+            }
+        }
     }
 
     private static bool HaveRecoveredWidgets { get; set; } = false;

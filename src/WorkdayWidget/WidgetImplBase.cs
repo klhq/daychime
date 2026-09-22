@@ -40,6 +40,7 @@ namespace CsConsoleWidgetProvider
         public virtual void Deactivate() { isActivated = false; }
         public virtual void OnActionInvoked(WidgetActionInvokedArgs actionInvokedArgs) { }
         public virtual void OnWidgetContextChanged(WidgetContextChangedArgs contextChangedArgs) { }
+        public virtual void OnSessionUnlock() { }
 
         public abstract string GetTemplateForWidget();
         public abstract string GetDataForWidget();

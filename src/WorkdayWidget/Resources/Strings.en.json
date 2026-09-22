@@ -17,6 +17,10 @@
   "cancelEdit": "Cancel edit",
   "switchTo12Hour": "Switch to 12-hour clock",
   "switchTo24Hour": "Switch to 24-hour clock",
+  "autoClockInOnLabel": "Auto clock in on unlock: On",
+  "autoClockInOffLabel": "Auto clock in on unlock: Off",
+  "turnOffAutoClockIn": "Turn off auto clock-in on unlock",
+  "turnOnAutoClockIn": "Turn on auto clock-in on unlock",
   "finishNotificationTitle": "Workday Widget",
   "finishNotificationBody": "Your expected finish time was {0}."
 }

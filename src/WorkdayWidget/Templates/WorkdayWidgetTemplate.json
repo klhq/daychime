@@ -22,6 +22,8 @@
           "items": [ { "type": "TextBlock", "text": "${clearLink}", "size": "Small", "color": "Attention", "wrap": true } ] },
         { "type": "TextBlock", "$when": "${!clockedIn}", "text": "${notClockedInYet}", "size": "Medium", "weight": "Bolder", "spacing": "Medium" },
         { "type": "TextBlock", "$when": "${!clockedIn}", "text": "${clockInHint}", "isSubtle": true, "wrap": true, "spacing": "Small" },
+        { "type": "Container", "$when": "${!clockedIn}", "spacing": "Small", "selectAction": { "type": "Action.Execute", "verb": "toggleAutoClockIn", "title": "${autoClockInToggleTitle}" },
+          "items": [ { "type": "TextBlock", "text": "${autoClockInStatus}", "size": "Small", "color": "Accent", "wrap": true } ] },
         { "type": "Input.Time", "$when": "${isEditing && !use24Hour}", "id": "clockIn", "label": "${clockInTimeLabel}", "value": "${clockInValue}", "isRequired": true, "errorMessage": "${invalidTime}", "spacing": "Medium", "separator": true },
         { "type": "Input.Text", "$when": "${isEditing && use24Hour}", "id": "clockIn", "label": "${clockInTimeLabel}", "placeholder": "09:00", "value": "${clockInValue}", "isRequired": true, "errorMessage": "${invalidTime}", "spacing": "Medium", "separator": true },
         { "type": "TextBlock", "$when": "${hasTimeError}", "text": "${invalidTime}", "color": "Attention", "wrap": true, "spacing": "Small" },
@@ -54,7 +56,9 @@
           "type": "Container", "$when": "${!clockedIn}", "spacing": "Large", "separator": true,
           "items": [
             { "type": "TextBlock", "text": "${notClockedInYet}", "size": "Large", "weight": "Bolder" },
-            { "type": "TextBlock", "text": "${clockInHint}", "isSubtle": true, "wrap": true, "spacing": "Small" }
+            { "type": "TextBlock", "text": "${clockInHint}", "isSubtle": true, "wrap": true, "spacing": "Small" },
+            { "type": "Container", "spacing": "Small", "selectAction": { "type": "Action.Execute", "verb": "toggleAutoClockIn", "title": "${autoClockInToggleTitle}" },
+              "items": [ { "type": "TextBlock", "text": "${autoClockInStatus}", "size": "Small", "color": "Accent", "wrap": true } ] }
           ]
         },
         { "type": "Input.Time", "$when": "${isEditing && !use24Hour}", "id": "clockIn", "label": "${clockInTimeLabel}", "value": "${clockInValue}", "isRequired": true, "errorMessage": "${invalidTime}", "spacing": "Medium", "separator": true },
@@ -89,7 +93,9 @@
           "type": "Container", "$when": "${!clockedIn}", "spacing": "ExtraLarge", "separator": true,
           "items": [
             { "type": "TextBlock", "text": "${notClockedInYet}", "size": "ExtraLarge", "weight": "Bolder" },
-            { "type": "TextBlock", "text": "${clockInHint}", "isSubtle": true, "wrap": true, "spacing": "Small" }
+            { "type": "TextBlock", "text": "${clockInHint}", "isSubtle": true, "wrap": true, "spacing": "Small" },
+            { "type": "Container", "spacing": "Small", "selectAction": { "type": "Action.Execute", "verb": "toggleAutoClockIn", "title": "${autoClockInToggleTitle}" },
+              "items": [ { "type": "TextBlock", "text": "${autoClockInStatus}", "color": "Accent", "wrap": true } ] }
           ]
         },
         { "type": "Input.Time", "$when": "${isEditing && !use24Hour}", "id": "clockIn", "label": "${clockInTimeLabel}", "value": "${clockInValue}", "isRequired": true, "errorMessage": "${invalidTime}", "spacing": "Large", "separator": true },

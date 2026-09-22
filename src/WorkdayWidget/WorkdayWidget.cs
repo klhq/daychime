@@ -30,6 +30,7 @@ internal sealed class WorkdayWidget : WidgetImplBase
                 break;
             case "cancelEdit": state = State.StartsWith(EditingPrefix) ? State[EditingPrefix.Length..] : State; break;
             case "toggleTimeFormat": ToggleUse24Hour(); break;
+            case "toggleAutoClockIn": ToggleAutoClockInOnUnlock(); break;
             case "askClear": state = ConfirmClearPrefix + GetClockInState(State); break;
             case "cancelClear": state = State.StartsWith(ConfirmClearPrefix) ? State[ConfirmClearPrefix.Length..] : State; break;
             case "clear": state = string.Empty; break;
@@ -78,6 +79,8 @@ internal sealed class WorkdayWidget : WidgetImplBase
             ["use24Hour"] = use24Hour,
             ["formatBadge"] = use24Hour ? "24h" : "12h",
             ["formatToggleTitle"] = use24Hour ? GetString(strings, "switchTo12Hour") : GetString(strings, "switchTo24Hour"),
+            ["autoClockInStatus"] = GetAutoClockInOnUnlock() ? GetString(strings, "autoClockInOnLabel") : GetString(strings, "autoClockInOffLabel"),
+            ["autoClockInToggleTitle"] = GetAutoClockInOnUnlock() ? GetString(strings, "turnOffAutoClockIn") : GetString(strings, "turnOnAutoClockIn"),
             ["clockInLabel"] = GetString(strings, "clockInLabel"),
             ["finishLabel"] = GetString(strings, "finishLabel"),
             ["clockInNow"] = GetString(strings, "clockInNow"),
@@ -135,6 +138,24 @@ internal sealed class WorkdayWidget : WidgetImplBase
     private static void ToggleUse24Hour()
     {
         ApplicationData.Current.LocalSettings.Values["Use24Hour"] = !GetUse24Hour();
+    }
+
+    private static bool GetAutoClockInOnUnlock() =>
+        ApplicationData.Current.LocalSettings.Values["AutoClockInOnUnlock"] is bool enabled && enabled;
+
+    private static void ToggleAutoClockInOnUnlock()
+    {
+        ApplicationData.Current.LocalSettings.Values["AutoClockInOnUnlock"] = !GetAutoClockInOnUnlock();
+    }
+
+    public override void OnSessionUnlock()
+    {
+        NormalizeStateForToday();
+        if (GetAutoClockInOnUnlock() && !DateTimeOffset.TryParse(GetClockInState(State), out _))
+        {
+            state = DateTimeOffset.Now.ToString("O");
+            UpdateFinishReminder();
+        }
     }
 
     private void NormalizeStateForToday()
