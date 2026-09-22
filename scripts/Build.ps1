@@ -8,6 +8,7 @@ param(
 
     [switch]$StoreUpload,
     [switch]$Clean,
+    [switch]$CleanOnly,
     [string]$OutputDirectory
 )
 
@@ -36,9 +37,16 @@ try {
         foreach ($path in @(
                 (Join-Path $repoRoot 'src\DaychimeWidget\bin'),
                 (Join-Path $repoRoot 'src\DaychimeWidget\obj'),
-                (Join-Path $repoRoot 'src\DaychimeWidget\AppPackages')
+                (Join-Path $repoRoot 'src\DaychimeWidget\AppPackages'),
+                (Join-Path $repoRoot 'src\DaychimeWidget\BundleArtifacts'),
+                (Join-Path $repoRoot 'artifacts\DaymarkWidget.msixupload')
             )) {
             if (Test-Path -LiteralPath $path) { Remove-Item -LiteralPath $path -Recurse -Force }
+        }
+
+        if ($CleanOnly) {
+            Write-Host 'Clean succeeded.'
+            return
         }
     }
 
