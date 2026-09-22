@@ -1,0 +1,56 @@
+name: Publish installer
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Version tag to publish (for example, v1.0.30)
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    env:
+      APPINSTALLER_URI: https://github.com/klhq/workday-widget/releases/latest/download/WorkdayWidget.appinstaller
+      PACKAGE_URI: https://github.com/klhq/workday-widget/releases/latest/download/WorkdayWidget.msix
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: Import signing certificate
+        shell: pwsh
+        env:
+          CERTIFICATE_BASE64: ${{ secrets.PACKAGE_CERTIFICATE_BASE64 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.PACKAGE_CERTIFICATE_PASSWORD }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:CERTIFICATE_BASE64) -or [string]::IsNullOrWhiteSpace($env:CERTIFICATE_PASSWORD)) {
+            throw 'Set PACKAGE_CERTIFICATE_BASE64 and PACKAGE_CERTIFICATE_PASSWORD repository secrets before publishing.'
+          }
+          $certificatePath = Join-Path $env:RUNNER_TEMP 'WorkdayWidget.pfx'
+          [IO.File]::WriteAllBytes($certificatePath, [Convert]::FromBase64String($env:CERTIFICATE_BASE64))
+          $certificate = Import-PfxCertificate -FilePath $certificatePath -CertStoreLocation Cert:\CurrentUser\My -Password (ConvertTo-SecureString $env:CERTIFICATE_PASSWORD -AsPlainText -Force)
+          "CERTIFICATE_THUMBPRINT=$($certificate.Thumbprint)" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Build signed installer
+        shell: pwsh
+        run: >
+          ./scripts/Build.ps1 -Configuration Release -Architecture x64 -Package
+          -CertificateThumbprint $env:CERTIFICATE_THUMBPRINT
+          -OutputDirectory artifacts
+          -AppInstallerUri $env:APPINSTALLER_URI -PackageUri $env:PACKAGE_URI
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag || github.ref_name }}
+          generate_release_notes: true
+          files: |
+            artifacts/WorkdayWidget.msix
+            artifacts/WorkdayWidget.appinstaller

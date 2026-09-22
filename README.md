@@ -24,12 +24,12 @@ A minimal Windows 11 Widgets Board card for tracking your workday: clock in with
 
 No dedicated settings screen. Adaptive Cards' action model doesn't have room for one on this host anyway, and a widget you check daily shouldn't behave like a settings form. Every preference (time format, auto clock-in, workday length) lives as a small in-body, one-tap chip instead — visible when relevant, silent otherwise. The footer never carries more than two buttons at once.
 
-## Building and installing
+## Build and install
 
-This isn't Store-published (see below), so it has to be built, signed, and sideloaded manually.
+This is a Windows Widget provider, so it cannot be run inside a normal Docker container: the Widget host, MSIX deployment, and certificate store are Windows integrations. Instead, the repository provides a Docker-like single build entry point that makes the Windows build reproducible and discoverable.
 
 **Prerequisites**
-- Visual Studio 2022 with the ".NET desktop development" and "Windows application development" workloads (provides MSBuild and the Windows App SDK/MSIX packaging tools). The .NET 8 SDK alone is enough for `dotnet build`, but packaging an installable `.msix` requires MSBuild.
+- Visual Studio 2022 with the ".NET desktop development" and "Windows application development" workloads (provides MSBuild and the Windows App SDK/MSIX packaging tools).
 - A code-signing certificate whose subject matches the identity in `src/WorkdayWidget/Package.appxmanifest` (`CN=Workday Widget`). If you don't have one yet, create a self-signed dev cert once:
   ```powershell
   New-SelfSignedCertificate -Type Custom -Subject "CN=Workday Widget" `
@@ -38,27 +38,37 @@ This isn't Store-published (see below), so it has to be built, signed, and sidel
     -TextExtension @("2.5.29.37={text}1.3.6.1.5.5.7.3.3", "2.5.29.19={text}")
   ```
 
-**Build and package**
+**Everyday build**
 ```powershell
-& "C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe" `
-  src\WorkdayWidget\CsConsoleWidgetProvider.csproj `
-  /p:Configuration=Release /p:Platform=x64 `
-  /p:AppxBundle=Never /p:UapAppxPackageBuildMode=SideloadOnly `
-  /p:GenerateAppxPackageOnBuild=true /restore
-```
-This produces `src\WorkdayWidget\AppPackages\CsConsoleWidgetProvider_<version>_x64_Test\CsConsoleWidgetProvider_<version>_x64.msix`, unsigned.
-
-**Sign it** (thumbprint from the cert created above, or `Get-ChildItem Cert:\CurrentUser\My` to find an existing one):
-```powershell
-& "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe" `
-  sign /fd SHA256 /sha1 <thumbprint> /s My <path-to-.msix>
+./scripts/Build.ps1
 ```
 
-**Install** (stop the running provider first if you're upgrading an existing install — Windows refuses to replace files still in use):
+**Package, sign, and install**
 ```powershell
-Get-Process -Name WorkdayWidget -ErrorAction SilentlyContinue | Stop-Process -Force
-Add-AppxPackage -Path <path-to-.msix> -ForceApplicationShutdown
+./scripts/Build.ps1 -Configuration Release -Architecture x64 -Package `
+  -CertificateThumbprint <thumbprint> -Install
 ```
+
+The script locates Visual Studio's MSBuild and the newest installed Windows SDK automatically. `-Package` emits the MSIX path; adding `-CertificateThumbprint` signs it from your Current User certificate store, and `-Install` replaces the currently running provider safely. Use `-Clean` to remove this project's generated build and package files before building.
+
+To package without signing or installing:
+
+```powershell
+./scripts/Build.ps1 -Configuration Release -Architecture x64 -Package
+```
+
+## One-click installs and updates
+
+For releases, use the Windows-native App Installer file rather than a custom `Setup.exe`. It opens the standard Windows install UI, keeps the app packaged correctly, and checks for updates automatically. Once a release has been published, users can install it from:
+
+[Install Workday Widget](ms-appinstaller:?source=https%3A%2F%2Fgithub.com%2Fklhq%2Fworkday-widget%2Freleases%2Flatest%2Fdownload%2FWorkdayWidget.appinstaller)
+
+Pushing a version tag such as `v1.0.30` publishes the MSIX and App Installer file through GitHub Actions. Before the first release, add these repository secrets:
+
+- `PACKAGE_CERTIFICATE_BASE64` — the Base64 contents of the signing `.pfx` certificate.
+- `PACKAGE_CERTIFICATE_PASSWORD` — its password.
+
+The certificate publisher must remain `CN=Workday Widget`, matching the app manifest. For public distribution, use a publicly trusted code-signing certificate; a self-signed development certificate requires every user to trust it manually.
 
 Then press `Win + W`, open "Add widgets," and pin Workday Widget.
 

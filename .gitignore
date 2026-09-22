@@ -20,3 +20,6 @@ obj/
 
 # Local MSIX install packages
 AppPackages/
+
+# Release files created by scripts/Build.ps1
+artifacts/
