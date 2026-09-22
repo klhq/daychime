@@ -4,7 +4,7 @@ A minimal Windows 11 Widgets Board card for tracking your workday: clock in with
 
 | Light | Dark |
 |---|---|
-| ![Workday Widget, light theme](src/WorkdayWidget/ProviderAssets/Workday_Screenshot_Light.png) | ![Workday Widget, dark theme](src/WorkdayWidget/ProviderAssets/Workday_Screenshot_Dark.png) |
+| <img src="src/WorkdayWidget/ProviderAssets/Workday_Screenshot_Light.png" alt="Workday Widget, light theme" width="300"> | <img src="src/WorkdayWidget/ProviderAssets/Workday_Screenshot_Dark.png" alt="Workday Widget, dark theme" width="300"> |
 
 ## Features
 
@@ -65,7 +65,6 @@ Then press `Win + W`, open "Add widgets," and pin Workday Widget.
 ## Repository contents
 
 - `src/WorkdayWidget/` — the shipped Windows Widget Provider (Windows App SDK, Adaptive Cards 1.5, COM widget provider model).
-- `outputs/WorkdayWidget/` — an earlier local prototype (a standalone script/native-window version) kept for reference; not part of the current implementation.
 
 ## License
 

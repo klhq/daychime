@@ -48,11 +48,7 @@ public sealed class WidgetProvider : IWidgetProvider
             try
             {
                 widget.OnSessionUnlock();
-                WidgetManager.GetDefault().UpdateWidget(new WidgetUpdateRequestOptions(widget.Id)
-                {
-                    Data = widget.GetDataForWidget(),
-                    CustomState = widget.State
-                });
+                SendWidgetUpdate(widget);
             }
             catch (Exception ex)
             {
@@ -96,12 +92,7 @@ public sealed class WidgetProvider : IWidgetProvider
                             // Need to recover this instance
                             var widgetInstance = WidgetImpls[context.DefinitionId](context.Id, widgetInfo.CustomState);
                             WidgetInstances[context.Id] = widgetInstance;
-                            WidgetManager.GetDefault().UpdateWidget(new WidgetUpdateRequestOptions(context.Id)
-                            {
-                                Template = widgetInstance.GetTemplateForWidget(),
-                                Data = widgetInstance.GetDataForWidget(),
-                                CustomState = widgetInstance.State
-                            });
+                            SendWidgetUpdate(widgetInstance, includeTemplate: true);
                             ProviderDiagnostics.Write($"Recovered content sent for {context.Id}.");
                         }
                         else
@@ -131,6 +122,25 @@ public sealed class WidgetProvider : IWidgetProvider
 
     private static Dictionary<string, WidgetImplBase> WidgetInstances = new();
 
+    private static WidgetUpdateRequestOptions CreateUpdateRequest(WidgetImplBase widget, bool includeTemplate = false)
+    {
+        var update = new WidgetUpdateRequestOptions(widget.Id)
+        {
+            Data = widget.GetDataForWidget(),
+            CustomState = widget.State
+        };
+
+        if (includeTemplate)
+            update.Template = widget.GetTemplateForWidget();
+
+        return update;
+    }
+
+    private static void SendWidgetUpdate(WidgetImplBase widget, bool includeTemplate = false)
+    {
+        WidgetManager.GetDefault().UpdateWidget(CreateUpdateRequest(widget, includeTemplate));
+    }
+
     // Handle the CreateWidget call. During this function call you should store
     // the WidgetId value so you can use it to update corresponding widget.
     // It is our way of notifying you that the user has pinned your widget
@@ -149,10 +159,7 @@ public sealed class WidgetProvider : IWidgetProvider
         var widgetInstance = WidgetImpls[widgetContext.DefinitionId](widgetContext.Id, "");
         WidgetInstances[widgetContext.Id] = widgetInstance;
 
-        WidgetUpdateRequestOptions options = new WidgetUpdateRequestOptions(widgetContext.Id);
-        options.Template = widgetInstance.GetTemplateForWidget();
-        options.Data = widgetInstance.GetDataForWidget();
-        options.CustomState = widgetInstance.State;
+        var options = CreateUpdateRequest(widgetInstance, includeTemplate: true);
 
         Console.WriteLine("Sending payload:");
         Console.WriteLine($"---Template---\n{options.Template}\n---\n");
@@ -245,11 +252,7 @@ public sealed class WidgetProvider : IWidgetProvider
         }
 
         widget.Activate(widgetContext);
-        WidgetManager.GetDefault().UpdateWidget(new WidgetUpdateRequestOptions(widgetContext.Id)
-        {
-            Data = widget.GetDataForWidget(),
-            CustomState = widget.State
-        });
+        SendWidgetUpdate(widget);
     }
 
     // Handle the Deactivate call. This function is called when widgets host stops listening
