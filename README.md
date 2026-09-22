@@ -33,6 +33,44 @@ Clear today's record
 
 No dedicated settings screen. Adaptive Cards' action model doesn't have room for one on this host anyway, and a widget you check daily shouldn't behave like a settings form. Every preference (time format, auto clock-in, workday length) lives as a small in-body, one-tap chip instead — visible when relevant, silent otherwise. The footer never carries more than two buttons at once.
 
+## Building and installing
+
+This isn't Store-published (see below), so it has to be built, signed, and sideloaded manually.
+
+**Prerequisites**
+- Visual Studio 2022 with the ".NET desktop development" and "Windows application development" workloads (provides MSBuild and the Windows App SDK/MSIX packaging tools). The .NET 8 SDK alone is enough for `dotnet build`, but packaging an installable `.msix` requires MSBuild.
+- A code-signing certificate whose subject matches the identity in `src/WorkdayWidget/Package.appxmanifest` (`CN=Workday Widget`). If you don't have one yet, create a self-signed dev cert once:
+  ```powershell
+  New-SelfSignedCertificate -Type Custom -Subject "CN=Workday Widget" `
+    -KeyUsage DigitalSignature -FriendlyName "Workday Widget Dev Cert" `
+    -CertStoreLocation "Cert:\CurrentUser\My" `
+    -TextExtension @("2.5.29.37={text}1.3.6.1.5.5.7.3.3", "2.5.29.19={text}")
+  ```
+
+**Build and package**
+```powershell
+& "C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe" `
+  src\WorkdayWidget\CsConsoleWidgetProvider.csproj `
+  /p:Configuration=Release /p:Platform=x64 `
+  /p:AppxBundle=Never /p:UapAppxPackageBuildMode=SideloadOnly `
+  /p:GenerateAppxPackageOnBuild=true /restore
+```
+This produces `src\WorkdayWidget\AppPackages\CsConsoleWidgetProvider_<version>_x64_Test\CsConsoleWidgetProvider_<version>_x64.msix`, unsigned.
+
+**Sign it** (thumbprint from the cert created above, or `Get-ChildItem Cert:\CurrentUser\My` to find an existing one):
+```powershell
+& "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe" `
+  sign /fd SHA256 /sha1 <thumbprint> /s My <path-to-.msix>
+```
+
+**Install** (stop the running provider first if you're upgrading an existing install — Windows refuses to replace files still in use):
+```powershell
+Get-Process -Name WorkdayWidget -ErrorAction SilentlyContinue | Stop-Process -Force
+Add-AppxPackage -Path <path-to-.msix> -ForceApplicationShutdown
+```
+
+Then press `Win + W`, open "Add widgets," and pin Workday Widget.
+
 ## Repository contents
 
 - `src/WorkdayWidget/` — the shipped Windows Widget Provider (Windows App SDK, Adaptive Cards 1.5, COM widget provider model).
