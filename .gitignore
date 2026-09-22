@@ -1,8 +1,8 @@
 # Local runtime data
 work/
 today.json
-workday-log.csv
-workday-history.csv
+daychime-log.csv
+daychime-history.csv
 
 # Build outputs and local launch helpers
 *.exe

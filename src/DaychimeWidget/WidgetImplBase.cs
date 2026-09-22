@@ -1,11 +1,11 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using Microsoft.Windows.Widgets.Providers;
 using System;
 using Windows.Storage;
 
-namespace CsConsoleWidgetProvider
+namespace DaychimeWidget
 {
     internal delegate WidgetImplBase WidgetCreateDelegate(string widgetId, string initialState);
     internal abstract class WidgetImplBase

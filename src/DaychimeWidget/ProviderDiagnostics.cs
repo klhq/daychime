@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace CsConsoleWidgetProvider;
+namespace DaychimeWidget;
 
 internal static class ProviderDiagnostics
 {
@@ -13,7 +13,7 @@ internal static class ProviderDiagnostics
         {
             lock (Sync)
             {
-                var folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "WorkdayWidget");
+                var folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DaychimeWidget");
                 Directory.CreateDirectory(folder);
                 var path = Path.Combine(folder, "provider.log");
                 File.AppendAllText(path, $"{DateTimeOffset.Now:O} {message}{Environment.NewLine}");

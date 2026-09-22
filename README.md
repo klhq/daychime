@@ -1,10 +1,10 @@
-# Daymark Widget
+# Daychime
 
 A minimal Windows 11 Widgets Board card for tracking your workday: clock in with one tap, see your expected finish time at a glance, and get reminded when it arrives.
 
 | Light | Dark |
 |---|---|
-| <img src="src/WorkdayWidget/ProviderAssets/Workday_Screenshot_Light.png" alt="Daymark Widget, light theme" width="300"> | <img src="src/WorkdayWidget/ProviderAssets/Workday_Screenshot_Dark.png" alt="Daymark Widget, dark theme" width="300"> |
+| <img src="src/DaychimeWidget/ProviderAssets/Daychime_Screenshot_Light.png" alt="Daychime, light theme" width="300"> | <img src="src/DaychimeWidget/ProviderAssets/Daychime_Screenshot_Dark.png" alt="Daychime, dark theme" width="300"> |
 
 ## Features
 
@@ -26,7 +26,7 @@ No dedicated settings screen. Adaptive Cards' action model doesn't have room for
 
 ## Install
 
-Daymark Widget will be installed and updated through Microsoft Store after its first certification. There is no separate installer, certificate, or download step for users.
+Daychime will be installed and updated through Microsoft Store after its first certification. There is no separate installer, certificate, or download step for users.
 
 See the [Privacy Policy](PRIVACY.md).
 
@@ -47,15 +47,15 @@ This is a Windows Widget provider, so it cannot be run inside a normal Docker co
 ./scripts/Build.ps1 -Configuration Release -Architecture x64 -StoreUpload -OutputDirectory artifacts
 ```
 
-The script emits `artifacts\DaymarkWidget.msixupload`, ready to upload to Partner Center. Microsoft Store signs and distributes the package; no code-signing certificate is needed. Use `-Clean` to remove this project's generated build and package files before building.
+The script emits `artifacts\Daychime.msixupload`, ready to upload to Partner Center. Microsoft Store signs and distributes the package; no code-signing certificate is needed. Use `-Clean` to remove this project's generated build and package files before building.
 
 Release instructions for maintainers are in [docs/RELEASING.md](docs/RELEASING.md).
 
-Then press `Win + W`, open "Add widgets," and pin Daymark Widget.
+Then press `Win + W`, open "Add widgets," and pin Daychime.
 
 ## Repository contents
 
-- `src/WorkdayWidget/` — the shipped Windows Widget Provider (Windows App SDK, Adaptive Cards 1.5, COM widget provider model).
+- `src/DaychimeWidget/` — the shipped Windows Widget Provider (Windows App SDK, Adaptive Cards 1.5, COM widget provider model).
 
 ## License
 

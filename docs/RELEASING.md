@@ -1,16 +1,16 @@
-# Releasing Daymark Widget
+# Releasing Daychime
 
 ## Store package workflow
 
-The GitHub Actions workflow runs on a version tag or manually, then uploads `DaymarkWidget.msixupload` as a workflow artifact. Download that artifact and submit it in Partner Center.
+The GitHub Actions workflow runs on a version tag or manually, then uploads `Daychime.msixupload` as a workflow artifact. Download that artifact and submit it in Partner Center.
 
 The Store-assigned package identity is committed in `Package.appxmanifest`. Do not replace it with a self-signed identity and do not sign Store upload packages locally: Microsoft signs the package after it passes certification.
 
 ## Publish a release
 
-1. In Partner Center, open Daymark Widget and choose **Start your submission**.
-2. Download the `DaymarkWidget-store-upload` artifact from the matching GitHub Actions run.
-3. Upload `DaymarkWidget.msixupload` under **Packages**.
+1. In Partner Center, open Daychime and choose **Start your submission**.
+2. Download the `Daychime-store-upload` artifact from the matching GitHub Actions run.
+3. Upload `Daychime.msixupload` under **Packages**.
 4. Complete Store listing, availability, age rating, and privacy policy information.
 5. Submit for certification.
 

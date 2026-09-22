@@ -6,17 +6,17 @@ using System.Text.Json.Nodes;
 using Windows.Storage;
 using Windows.UI.Notifications;
 
-namespace CsConsoleWidgetProvider;
+namespace DaychimeWidget;
 
-internal sealed class WorkdayWidget : WidgetImplBase
+internal sealed class Daychime : WidgetImplBase
 {
-    public static string DefinitionId => "Workday_Widget";
+    public static string DefinitionId => "Daychime_Widget";
     private const string FinishReminderTag = "finish-reminder";
     private const string FinishReminderGroup = "workday";
     private const string EditingPrefix = "editing|";
     private const string EditingErrorPrefix = "editing-error|";
     private const string ConfirmClearPrefix = "confirm-clear|";
-    public WorkdayWidget(string widgetId, string startingState) : base(widgetId, startingState) { }
+    public Daychime(string widgetId, string startingState) : base(widgetId, startingState) { }
 
     public override void OnActionInvoked(WidgetActionInvokedArgs args)
     {
@@ -51,7 +51,7 @@ internal sealed class WorkdayWidget : WidgetImplBase
         WidgetManager.GetDefault().UpdateWidget(update);
     }
 
-    public override string GetTemplateForWidget() => ReadPackageFileFromUri("ms-appx:///Templates/WorkdayWidgetTemplate.json");
+    public override string GetTemplateForWidget() => ReadPackageFileFromUri("ms-appx:///Templates/DaychimeTemplate.json");
 
     public override string GetDataForWidget()
     {

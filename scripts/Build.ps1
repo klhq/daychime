@@ -14,7 +14,7 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
-$project = Join-Path $repoRoot 'src\WorkdayWidget\CsConsoleWidgetProvider.csproj'
+$project = Join-Path $repoRoot 'src\DaychimeWidget\DaychimeWidget.csproj'
 
 function Find-MSBuild {
     $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
@@ -34,9 +34,9 @@ Push-Location $repoRoot
 try {
     if ($Clean) {
         foreach ($path in @(
-                (Join-Path $repoRoot 'src\WorkdayWidget\bin'),
-                (Join-Path $repoRoot 'src\WorkdayWidget\obj'),
-                (Join-Path $repoRoot 'src\WorkdayWidget\AppPackages')
+                (Join-Path $repoRoot 'src\DaychimeWidget\bin'),
+                (Join-Path $repoRoot 'src\DaychimeWidget\obj'),
+                (Join-Path $repoRoot 'src\DaychimeWidget\AppPackages')
             )) {
             if (Test-Path -LiteralPath $path) { Remove-Item -LiteralPath $path -Recurse -Force }
         }
@@ -69,7 +69,7 @@ try {
         return
     }
 
-    $msixUpload = Get-ChildItem -Path (Join-Path $repoRoot 'src\WorkdayWidget\AppPackages') -Filter '*.msixupload' -Recurse |
+    $msixUpload = Get-ChildItem -Path (Join-Path $repoRoot 'src\DaychimeWidget\AppPackages') -Filter '*.msixupload' -Recurse |
         Sort-Object LastWriteTime -Descending |
         Select-Object -First 1
     if (-not $msixUpload) { throw 'Store packaging succeeded but no .msixupload file was found.' }
@@ -77,7 +77,7 @@ try {
     if ($OutputDirectory) {
         $outputPath = [System.IO.Path]::GetFullPath($OutputDirectory, $repoRoot)
         New-Item -ItemType Directory -Path $outputPath -Force | Out-Null
-        $storeUploadPath = Join-Path $outputPath 'DaymarkWidget.msixupload'
+        $storeUploadPath = Join-Path $outputPath 'Daychime.msixupload'
         Copy-Item -LiteralPath $msixUpload.FullName -Destination $storeUploadPath -Force
         Write-Host "Store upload: $storeUploadPath"
     }

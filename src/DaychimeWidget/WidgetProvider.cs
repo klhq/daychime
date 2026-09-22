@@ -1,7 +1,7 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using CsConsoleWidgetProvider;
+using DaychimeWidget;
 using Microsoft.Win32;
 using Microsoft.Windows.Widgets.Providers;
 using System;
@@ -117,7 +117,7 @@ public sealed class WidgetProvider : IWidgetProvider
     }
 
     private static readonly Dictionary<string, WidgetCreateDelegate> WidgetImpls = new() {
-        [WorkdayWidget.DefinitionId] = (widgetId, initialState) => new WorkdayWidget(widgetId, initialState)
+        [Daychime.DefinitionId] = (widgetId, initialState) => new Daychime(widgetId, initialState)
     };
 
     private static Dictionary<string, WidgetImplBase> WidgetInstances = new();

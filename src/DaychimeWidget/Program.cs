@@ -1,11 +1,11 @@
-﻿// Copyright (C) Microsoft Corporation.
+// Copyright (C) Microsoft Corporation.
 // Licensed under the MIT License.
 
 using Microsoft.Windows.Widgets.Providers;
 using System;
 using WidgetHelper;
 
-namespace CsConsoleWidgetProvider
+namespace DaychimeWidget
 {
     /// <summary>
     /// Main provider entrypoint.
@@ -16,7 +16,7 @@ namespace CsConsoleWidgetProvider
         static void Main(string[] args)
         {
             ProviderDiagnostics.Write($"Started: {string.Join(' ', args)}");
-            Console.WriteLine("CsConsoleWidgetProvider Starting...");
+            Console.WriteLine("DaychimeWidget Starting...");
             if (args.Length > 0 && args[0] == "-RegisterProcessAsComServer")
             {
                 WinRT.ComWrappersSupport.InitializeComWrappers();
