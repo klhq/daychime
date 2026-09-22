@@ -31,6 +31,7 @@ internal sealed class WorkdayWidget : WidgetImplBase
             case "cancelEdit": state = State.StartsWith(EditingPrefix) ? State[EditingPrefix.Length..] : State; break;
             case "toggleTimeFormat": ToggleUse24Hour(); break;
             case "toggleAutoClockIn": ToggleAutoClockInOnUnlock(); break;
+            case "cycleWorkHours": CycleWorkHours(); break;
             case "askClear": state = ConfirmClearPrefix + GetClockInState(State); break;
             case "cancelClear": state = State.StartsWith(ConfirmClearPrefix) ? State[ConfirmClearPrefix.Length..] : State; break;
             case "clear": state = string.Empty; break;
@@ -68,7 +69,9 @@ internal sealed class WorkdayWidget : WidgetImplBase
             start = start.ToLocalTime();
             timezoneChanged = originalOffset != start.Offset;
         }
-        var finish = clockedIn ? start.AddHours(9) : default;
+        var workHours = GetWorkHours();
+        var nextWorkHours = WorkHoursPresets[(Array.IndexOf(WorkHoursPresets, workHours) + 1) % WorkHoursPresets.Length];
+        var finish = clockedIn ? start.AddHours(workHours) : default;
         var use24Hour = GetUse24Hour();
         var timeFormat = use24Hour ? "HH:mm" : CultureInfo.CurrentCulture.DateTimeFormat.ShortTimePattern;
         return new JsonObject {
@@ -101,7 +104,8 @@ internal sealed class WorkdayWidget : WidgetImplBase
             ["timezoneAdjustedNote"] = GetString(strings, "timezoneAdjustedNote"),
             ["confirmClear"] = GetString(strings, "confirmClear"),
             ["cancel"] = GetString(strings, "cancel"),
-            ["breakSummary"] = GetString(strings, "breakSummary"),
+            ["workHoursSummary"] = string.Format(CultureInfo.CurrentCulture, GetString(strings, "workHoursSummary"), FormatHours(workHours)),
+            ["workHoursToggleTitle"] = string.Format(CultureInfo.CurrentCulture, GetString(strings, "workHoursToggleTitle"), FormatHours(nextWorkHours)),
             ["notClockedInYet"] = GetString(strings, "notClockedInYet"),
             ["clockInHint"] = GetString(strings, "clockInHint"),
             ["nowLabel"] = GetString(strings, "nowLabel"),
@@ -157,6 +161,22 @@ internal sealed class WorkdayWidget : WidgetImplBase
         ApplicationData.Current.LocalSettings.Values["AutoClockInOnUnlock"] = !GetAutoClockInOnUnlock();
     }
 
+    private static readonly double[] WorkHoursPresets = { 8, 8.5, 9, 9.5, 10 };
+
+    private static double GetWorkHours()
+    {
+        var value = ApplicationData.Current.LocalSettings.Values["WorkHours"];
+        return value is double hours && Array.IndexOf(WorkHoursPresets, hours) >= 0 ? hours : 9.0;
+    }
+
+    private static void CycleWorkHours()
+    {
+        var index = Array.IndexOf(WorkHoursPresets, GetWorkHours());
+        ApplicationData.Current.LocalSettings.Values["WorkHours"] = WorkHoursPresets[(index + 1) % WorkHoursPresets.Length];
+    }
+
+    private static string FormatHours(double hours) => hours.ToString("0.#", CultureInfo.InvariantCulture);
+
     public override void OnSessionUnlock()
     {
         NormalizeStateForToday();
@@ -198,7 +218,7 @@ internal sealed class WorkdayWidget : WidgetImplBase
             return;
         start = start.ToLocalTime();
 
-        var finish = start.AddHours(9);
+        var finish = start.AddHours(GetWorkHours());
         if (finish <= DateTimeOffset.Now)
             return;
 

@@ -43,7 +43,8 @@
               "items": [ { "type": "TextBlock", "text": "${formatBadge}", "weight": "Bolder", "color": "Accent", "wrap": false } ] }
           ]
         },
-        { "type": "TextBlock", "$when": "${showFormatToggle}", "text": "${breakSummary}", "isSubtle": true, "size": "Small", "spacing": "Small" },
+        { "type": "Container", "$when": "${showFormatToggle}", "spacing": "Small", "selectAction": { "type": "Action.Execute", "verb": "cycleWorkHours", "title": "${workHoursToggleTitle}" },
+          "items": [ { "type": "TextBlock", "text": "${workHoursSummary}", "size": "Small", "weight": "Bolder", "color": "Accent", "wrap": true } ] },
         {
           "type": "ColumnSet", "$when": "${canEdit}", "spacing": "Medium", "separator": true,
           "columns": [
@@ -81,7 +82,8 @@
               "items": [ { "type": "TextBlock", "text": "${formatBadge}", "weight": "Bolder", "color": "Accent", "wrap": false } ] }
           ]
         },
-        { "type": "TextBlock", "$when": "${showFormatToggle}", "text": "${breakSummary}", "isSubtle": true, "spacing": "Small" },
+        { "type": "Container", "$when": "${showFormatToggle}", "spacing": "Small", "selectAction": { "type": "Action.Execute", "verb": "cycleWorkHours", "title": "${workHoursToggleTitle}" },
+          "items": [ { "type": "TextBlock", "text": "${workHoursSummary}", "weight": "Bolder", "color": "Accent", "wrap": true } ] },
         {
           "type": "ColumnSet", "$when": "${canEdit}", "spacing": "Large", "separator": true,
           "columns": [
