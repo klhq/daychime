@@ -23,6 +23,6 @@
   "autoClockInOffLabel": "Auto clock in on unlock: Off",
   "turnOffAutoClockIn": "Turn off auto clock-in on unlock",
   "turnOnAutoClockIn": "Turn on auto clock-in on unlock",
-  "finishNotificationTitle": "Workday Widget",
+  "finishNotificationTitle": "Daymark Widget",
   "finishNotificationBody": "Your expected finish time was {0}."
 }

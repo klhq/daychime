@@ -1,32 +1,17 @@
-# Releasing Workday Widget
+# Releasing Daymark Widget
 
-## Choose the right distribution path
+## Store package workflow
 
-| Audience | Recommended path | Signing |
-| --- | --- | --- |
-| General public | Microsoft Store | Microsoft signs the package; no certificate management or install workaround for users. |
-| Direct public download | HTTPS-hosted App Installer | Use Azure Artifact Signing or another CA-trusted code-signing service. |
-| Company-managed devices | Intune or Configuration Manager | An organization certificate is acceptable when its trust is deployed with device management. |
-| Local development and testers | App Installer | Self-signed certificate; every test device must trust it first. |
+The GitHub Actions workflow runs on a version tag or manually, then uploads `DaymarkWidget.msixupload` as a workflow artifact. Download that artifact and submit it in Partner Center.
 
-Do not use a self-signed certificate for public distribution. Windows blocks packages whose signer is not trusted.
+The Store-assigned package identity is committed in `Package.appxmanifest`. Do not replace it with a self-signed identity and do not sign Store upload packages locally: Microsoft signs the package after it passes certification.
 
-## Current CI workflow
+## Publish a release
 
-The GitHub Actions workflow creates an MSIX and `.appinstaller` release when a `vMAJOR.MINOR.PATCH` tag is pushed. The tag must match the first three components of the manifest package version: `v1.0.30` requires `1.0.30.0` in `Package.appxmanifest`.
+1. In Partner Center, open Daymark Widget and choose **Start your submission**.
+2. Download the `DaymarkWidget-store-upload` artifact from the matching GitHub Actions run.
+3. Upload `DaymarkWidget.msixupload` under **Packages**.
+4. Complete Store listing, availability, age rating, and privacy policy information.
+5. Submit for certification.
 
-The current workflow accepts a PFX only as a development/testing bridge. It needs these repository **Secrets**:
-
-- `PACKAGE_CERTIFICATE_BASE64`: Base64-encoded PFX containing the signing private key.
-- `PACKAGE_CERTIFICATE_PASSWORD`: password protecting that PFX.
-
-Never put either value in a variable, committed file, release asset, or issue. The workflow adds a trusted timestamp to every signature so a signed package remains verifiable after the certificate expires.
-
-## Before a public release
-
-1. Move signing to Microsoft Store or Azure Artifact Signing / a CA-trusted code-signing provider.
-2. Keep the certificate subject equal to the manifest publisher: `CN=Workday Widget`.
-3. Verify the package installs on a clean Windows 11 device without importing a certificate.
-4. Create a GitHub Release from a tag whose version matches the manifest.
-
-Microsoft's guidance: [code signing options](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/code-signing-options), [choosing a distribution path](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/choose-distribution-path), and [App Installer troubleshooting](https://learn.microsoft.com/en-us/windows/msix/app-installer/troubleshoot-appinstaller-issues).
+After certification, Microsoft Store handles installation, trusted signing, and updates. Microsoft guidance: [publish an MSIX app](https://learn.microsoft.com/en-us/windows/apps/publish/publish-your-app/msix/app-certification-process) and [app package requirements](https://learn.microsoft.com/en-us/windows/apps/publish/publish-your-app/msix/app-package-requirements).

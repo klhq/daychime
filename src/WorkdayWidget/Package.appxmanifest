@@ -9,13 +9,13 @@
   IgnorableNamespaces="uap uap3 rescap">
 
 	<Identity
-	  Name="WorkdayWidget"
-	  Publisher="CN=Workday Widget"
+	  Name="klhq.DaymarkWidget"
+	  Publisher="CN=C1775D8D-B1FD-4BF1-A1FF-7F1C3F0163BA"
 	  Version="1.0.29.0" />
 
 	<Properties>
-		<DisplayName>Workday Widget</DisplayName>
-		<PublisherDisplayName>Workday Widget</PublisherDisplayName>
+		<DisplayName>Daymark Widget</DisplayName>
+		<PublisherDisplayName>klhq</PublisherDisplayName>
 		<Logo>Assets\StoreLogo.png</Logo>
 	</Properties>
 
@@ -33,7 +33,7 @@
 		  Executable="$targetnametoken$.exe"
 		  EntryPoint="$targetentrypoint$">
 			<uap:VisualElements
-			  DisplayName="Workday Widget"
+			  DisplayName="Daymark Widget"
 			  Description="Clock in and see your expected finish time."
 			  BackgroundColor="transparent"
 			  Square150x150Logo="Assets\Square150x150Logo.png"
@@ -44,13 +44,13 @@
 			<Extensions>
 				<com:Extension Category="windows.comServer">
 					<com:ComServer>
-						<com:ExeServer Executable="WorkdayWidget.exe" Arguments="-RegisterProcessAsComServer" DisplayName="Workday Widget">
-							<com:Class Id="80DAE84C-DE3C-4F02-8ECD-DCDD1CDECC15" DisplayName="Workday Widget" />
+					<com:ExeServer Executable="WorkdayWidget.exe" Arguments="-RegisterProcessAsComServer" DisplayName="Daymark Widget">
+						<com:Class Id="80DAE84C-DE3C-4F02-8ECD-DCDD1CDECC15" DisplayName="Daymark Widget" />
 						</com:ExeServer>
 					</com:ComServer>
 				</com:Extension>
 				<uap3:Extension Category="windows.appExtension">
-					<uap3:AppExtension Name="com.microsoft.windows.widgets" DisplayName="Workday Widget" Id="workday.widget" PublicFolder="Public">
+					<uap3:AppExtension Name="com.microsoft.windows.widgets" DisplayName="Daymark Widget" Id="workday.widget" PublicFolder="Public">
 						<uap3:Properties>
 							<WidgetProvider>
 								<ProviderIcons>
@@ -63,7 +63,7 @@
 
 								<Definitions>
                                     <Definition Id="Workday_Widget" AllowMultiple="false"
-										DisplayName="Workday Widget"
+										DisplayName="Daymark Widget"
 										Description="Clock in and see your expected finish time.">
 										<Capabilities>
 											<Capability>

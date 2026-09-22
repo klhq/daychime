@@ -1,0 +1,26 @@
+name: Build Microsoft Store package
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Store upload package
+        shell: pwsh
+        run: ./scripts/Build.ps1 -Configuration Release -Architecture x64 -StoreUpload -OutputDirectory artifacts
+
+      - name: Upload Store package
+        uses: actions/upload-artifact@v4
+        with:
+          name: DaymarkWidget-store-upload
+          path: artifacts/DaymarkWidget.msixupload
+          if-no-files-found: error

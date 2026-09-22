@@ -1,10 +1,10 @@
-# Workday Widget
+# Daymark Widget
 
 A minimal Windows 11 Widgets Board card for tracking your workday: clock in with one tap, see your expected finish time at a glance, and get reminded when it arrives.
 
 | Light | Dark |
 |---|---|
-| <img src="src/WorkdayWidget/ProviderAssets/Workday_Screenshot_Light.png" alt="Workday Widget, light theme" width="300"> | <img src="src/WorkdayWidget/ProviderAssets/Workday_Screenshot_Dark.png" alt="Workday Widget, dark theme" width="300"> |
+| <img src="src/WorkdayWidget/ProviderAssets/Workday_Screenshot_Light.png" alt="Daymark Widget, light theme" width="300"> | <img src="src/WorkdayWidget/ProviderAssets/Workday_Screenshot_Dark.png" alt="Daymark Widget, dark theme" width="300"> |
 
 ## Features
 
@@ -26,9 +26,7 @@ No dedicated settings screen. Adaptive Cards' action model doesn't have room for
 
 ## Install
 
-For a production release signed by a trusted provider, users download [WorkdayWidget.appinstaller](https://github.com/klhq/workday-widget/releases/latest/download/WorkdayWidget.appinstaller) and open it with Windows App Installer. It installs the widget and checks for updates automatically.
-
-The current self-signed release is for local development and managed test devices only. Do not share it as a public installer: Windows will block a package whose signer is not already trusted.
+Daymark Widget will be installed and updated through Microsoft Store after its first certification. There is no separate installer, certificate, or download step for users.
 
 ## Build and install
 
@@ -36,36 +34,22 @@ This is a Windows Widget provider, so it cannot be run inside a normal Docker co
 
 **Prerequisites**
 - Visual Studio 2022 with the ".NET desktop development" and "Windows application development" workloads (provides MSBuild and the Windows App SDK/MSIX packaging tools).
-- A code-signing certificate whose subject matches the identity in `src/WorkdayWidget/Package.appxmanifest` (`CN=Workday Widget`). If you don't have one yet, create a self-signed dev cert once:
-  ```powershell
-  New-SelfSignedCertificate -Type Custom -Subject "CN=Workday Widget" `
-    -KeyUsage DigitalSignature -FriendlyName "Workday Widget Dev Cert" `
-    -CertStoreLocation "Cert:\CurrentUser\My" `
-    -TextExtension @("2.5.29.37={text}1.3.6.1.5.5.7.3.3", "2.5.29.19={text}")
-  ```
 
 **Everyday build**
 ```powershell
 ./scripts/Build.ps1
 ```
 
-**Package, sign, and install**
+**Create a Store upload package**
 ```powershell
-./scripts/Build.ps1 -Configuration Release -Architecture x64 -Package `
-  -CertificateThumbprint <thumbprint> -Install
+./scripts/Build.ps1 -Configuration Release -Architecture x64 -StoreUpload -OutputDirectory artifacts
 ```
 
-The script locates Visual Studio's MSBuild and the newest installed Windows SDK automatically. `-Package` emits the MSIX path; adding `-CertificateThumbprint` signs it from your Current User certificate store, and `-Install` replaces the currently running provider safely. Use `-Clean` to remove this project's generated build and package files before building.
+The script emits `artifacts\DaymarkWidget.msixupload`, ready to upload to Partner Center. Microsoft Store signs and distributes the package; no code-signing certificate is needed. Use `-Clean` to remove this project's generated build and package files before building.
 
-To package without signing or installing:
+Release instructions for maintainers are in [docs/RELEASING.md](docs/RELEASING.md).
 
-```powershell
-./scripts/Build.ps1 -Configuration Release -Architecture x64 -Package
-```
-
-Release and signing instructions for maintainers are in [docs/RELEASING.md](docs/RELEASING.md).
-
-Then press `Win + W`, open "Add widgets," and pin Workday Widget.
+Then press `Win + W`, open "Add widgets," and pin Daymark Widget.
 
 ## Repository contents
 
