@@ -2,18 +2,9 @@
 
 A minimal Windows 11 Widgets Board card for tracking your workday: clock in with one tap, see your expected finish time at a glance, and get reminded when it arrives.
 
-```text
-Tue, Sep 22
-Now 11:51 AM                         12h
-9-hour workday
-
-Clock in                    09:07
-Expected finish             18:07
-
-Clear today's record
-
-[ Edit time ]
-```
+| Light | Dark |
+|---|---|
+| ![Workday Widget, light theme](src/WorkdayWidget/ProviderAssets/Workday_Screenshot_Light.png) | ![Workday Widget, dark theme](src/WorkdayWidget/ProviderAssets/Workday_Screenshot_Dark.png) |
 
 ## Features
 
