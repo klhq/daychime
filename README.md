@@ -28,6 +28,8 @@ No dedicated settings screen. Adaptive Cards' action model doesn't have room for
 
 Daymark Widget will be installed and updated through Microsoft Store after its first certification. There is no separate installer, certificate, or download step for users.
 
+See the [Privacy Policy](PRIVACY.md).
+
 ## Build and install
 
 This is a Windows Widget provider, so it cannot be run inside a normal Docker container: the Widget host, MSIX deployment, and certificate store are Windows integrations. Instead, the repository provides a Docker-like single build entry point that makes the Windows build reproducible and discoverable.
