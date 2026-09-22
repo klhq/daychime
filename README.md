@@ -65,7 +65,6 @@ Then press `Win + W`, open "Add widgets," and pin Workday Widget.
 ## Repository contents
 
 - `src/WorkdayWidget/` — the shipped Windows Widget Provider (Windows App SDK, Adaptive Cards 1.5, COM widget provider model).
-- `outputs/WorkdayWidget/` — an earlier local prototype (a standalone script/native-window version) kept for reference; not part of the current implementation.
 
 ## License
 
