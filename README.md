@@ -50,6 +50,7 @@ This is a Windows Widget provider, so it cannot be run inside a normal Docker co
 The script emits `artifacts\Daychime.msixupload`, ready to upload to Partner Center. Microsoft Store signs and distributes the package; no code-signing certificate is needed. Use `-Clean` to remove this project's generated build and package files before building.
 
 Release instructions for maintainers are in [docs/RELEASING.md](docs/RELEASING.md).
+Store listing copy and screenshot requirements are in [docs/STORE_LISTING.md](docs/STORE_LISTING.md).
 
 Then press `Win + W`, open "Add widgets," and pin Daychime.
 
