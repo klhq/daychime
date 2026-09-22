@@ -61,6 +61,7 @@ internal sealed class WorkdayWidget : WidgetImplBase
         var hasTimeError = State.StartsWith(EditingErrorPrefix);
         var effectiveState = GetClockInState(State);
         var clockedIn = DateTimeOffset.TryParse(effectiveState, out var start);
+        if (clockedIn) start = start.ToLocalTime();
         var finish = clockedIn ? start.AddHours(9) : default;
         var use24Hour = GetUse24Hour();
         var timeFormat = use24Hour ? "HH:mm" : CultureInfo.CurrentCulture.DateTimeFormat.ShortTimePattern;
@@ -187,6 +188,7 @@ internal sealed class WorkdayWidget : WidgetImplBase
 
         if (!DateTimeOffset.TryParse(GetClockInState(State), out var start))
             return;
+        start = start.ToLocalTime();
 
         var finish = start.AddHours(9);
         if (finish <= DateTimeOffset.Now)
