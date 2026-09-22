@@ -4,7 +4,7 @@ A minimal Windows 11 Widgets Board card for tracking your workday: clock in with
 
 | Light | Dark |
 |---|---|
-| ![Workday Widget, light theme](src/WorkdayWidget/ProviderAssets/Workday_Screenshot_Light.png) | ![Workday Widget, dark theme](src/WorkdayWidget/ProviderAssets/Workday_Screenshot_Dark.png) |
+| <img src="src/WorkdayWidget/ProviderAssets/Workday_Screenshot_Light.png" alt="Workday Widget, light theme" width="300"> | <img src="src/WorkdayWidget/ProviderAssets/Workday_Screenshot_Dark.png" alt="Workday Widget, dark theme" width="300"> |
 
 ## Features
 
