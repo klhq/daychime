@@ -213,11 +213,7 @@ internal sealed class Daychime : WidgetImplBase
 
     private static DateTimeOffset GetCurrentTime()
     {
-#if DEBUG
-        return new DateTimeOffset(DateTime.Today.AddHours(18));
-#else
         return DateTimeOffset.Now;
-#endif
     }
 
     private static string GetBaseState(string currentState)

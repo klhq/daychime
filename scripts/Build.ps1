@@ -83,7 +83,12 @@ try {
     if (-not $msixUpload) { throw 'Store packaging succeeded but no .msixupload file was found.' }
 
     if ($OutputDirectory) {
-        $outputPath = [System.IO.Path]::GetFullPath($OutputDirectory, $repoRoot)
+        $outputPath = if ([System.IO.Path]::IsPathRooted($OutputDirectory)) {
+            [System.IO.Path]::GetFullPath($OutputDirectory)
+        }
+        else {
+            [System.IO.Path]::GetFullPath((Join-Path $repoRoot $OutputDirectory))
+        }
         New-Item -ItemType Directory -Path $outputPath -Force | Out-Null
         $storeUploadPath = Join-Path $outputPath 'Daychime.msixupload'
         Copy-Item -LiteralPath $msixUpload.FullName -Destination $storeUploadPath -Force

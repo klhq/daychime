@@ -16,6 +16,8 @@
               "items": [ { "type": "TextBlock", "text": "${formatBadge}", "size": "Small", "weight": "Bolder", "color": "Accent", "wrap": false } ] }
           ]
         },
+        { "type": "Container", "$when": "${showFormatToggle}", "spacing": "Small", "selectAction": { "type": "Action.Execute", "verb": "cycleWorkHours", "title": "${workHoursToggleTitle}" },
+          "items": [ { "type": "TextBlock", "text": "${workHoursSummary}", "size": "Small", "weight": "Bolder", "color": "Accent", "wrap": true } ] },
         { "type": "TextBlock", "$when": "${canEdit}", "text": "${finishLabel}", "isSubtle": true, "spacing": "Medium" },
         { "type": "TextBlock", "$when": "${canEdit}", "text": "${finish}", "size": "ExtraLarge", "weight": "Bolder", "spacing": "None" },
         { "type": "TextBlock", "$when": "${endsNextDay}", "text": "${endsTomorrow}", "isSubtle": true, "size": "Small", "spacing": "None", "wrap": true },

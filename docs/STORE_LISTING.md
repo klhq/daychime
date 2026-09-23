@@ -7,11 +7,11 @@ Use this file as the source for the Microsoft Store listing. Do not put URLs in 
 | Field | Value |
 | --- | --- |
 | Product name | Daychime |
-| Support contact | https://github.com/klhq/daychime/issues |
-| Privacy policy | https://github.com/klhq/daychime/blob/main/PRIVACY.md |
-| Website | https://github.com/klhq/daychime |
 | First release: What's new in this version | Leave blank |
 | Additional system requirement | Windows 11 with Widgets Board support |
+| Copyright and trademark info | © 2026 Daychime contributors |
+| Additional license terms | This app is licensed under the MIT License. |
+| Developed by | Daychime contributors |
 
 ## Screenshots
 
@@ -23,27 +23,6 @@ Upload these four screenshots in this order:
 2. The work-hours control, showing a selected workday duration.
 3. The edit-time state, showing the editable clock-in field.
 4. The auto clock-in setting, showing the first eligible unlock time.
-
-### English captions
-
-1. See your clock-in time and estimated finish time at a glance.
-2. Choose a workday length from 8 to 10 hours.
-3. Correct today's clock-in time whenever you need to.
-4. Optionally clock in automatically when you first unlock your PC each day.
-
-### Traditional Chinese captions
-
-1. 一眼查看上班時間與預計下班時間。
-2. 選擇 8 到 10 小時的工作時數。
-3. 隨時修改今天的上班打卡時間。
-4. 可選擇每天首次解鎖電腦時自動打卡。
-
-### Simplified Chinese captions
-
-1. 一眼查看上班时间与预计下班时间。
-2. 选择 8 到 10 小时的工作时长。
-3. 随时修改今天的上班打卡时间。
-4. 可选择每天首次解锁电脑时自动打卡。
 
 ## English (United States)
 
