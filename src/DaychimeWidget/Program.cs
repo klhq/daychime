@@ -3,6 +3,8 @@
 
 using Microsoft.Windows.Widgets.Providers;
 using System;
+using System.Globalization;
+using System.Runtime.InteropServices;
 using WidgetHelper;
 
 namespace DaychimeWidget
@@ -12,6 +14,11 @@ namespace DaychimeWidget
     /// </summary>
     public static class Program
     {
+        private const uint MessageBoxInformation = 0x00000040;
+
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+        private static extern int MessageBox(IntPtr owner, string text, string caption, uint type);
+
         [MTAThread]
         static void Main(string[] args)
         {
@@ -46,10 +53,26 @@ namespace DaychimeWidget
             }
             else
             {
-                ProviderDiagnostics.Write("Exited: no provider activation argument.");
-                Console.WriteLine("Not being launched to service Widget Provider... exiting.");
+                ProviderDiagnostics.Write("Launched directly; showing Widgets Board instructions.");
+                MessageBox(
+                    IntPtr.Zero,
+                    GetDirectLaunchMessage(),
+                    GetDirectLaunchTitle(),
+                    MessageBoxInformation);
             }
         }
+
+        private static string GetDirectLaunchTitle() => IsTraditionalChinese() ? "Daychime 已準備完成" : IsSimplifiedChinese() ? "Daychime 已准备就绪" : "Daychime is ready";
+
+        private static string GetDirectLaunchMessage() => IsTraditionalChinese()
+            ? "Daychime 位於 Windows 小工具。\n\n按 Win + W，選取「新增小工具」，然後加入 Daychime。"
+            : IsSimplifiedChinese()
+                ? "Daychime 位于 Windows 小组件。\n\n按 Win + W，选择“添加小组件”，然后添加 Daychime。"
+                : "Daychime lives in the Windows Widgets Board.\n\nPress Win + W, select Add widgets, then add Daychime.";
+
+        private static bool IsTraditionalChinese() => CultureInfo.CurrentUICulture.Name.StartsWith("zh-Hant", StringComparison.OrdinalIgnoreCase) || CultureInfo.CurrentUICulture.Name.StartsWith("zh-TW", StringComparison.OrdinalIgnoreCase) || CultureInfo.CurrentUICulture.Name.StartsWith("zh-HK", StringComparison.OrdinalIgnoreCase);
+
+        private static bool IsSimplifiedChinese() => CultureInfo.CurrentUICulture.Name.StartsWith("zh-Hans", StringComparison.OrdinalIgnoreCase) || CultureInfo.CurrentUICulture.Name.StartsWith("zh-CN", StringComparison.OrdinalIgnoreCase) || CultureInfo.CurrentUICulture.Name.StartsWith("zh-SG", StringComparison.OrdinalIgnoreCase);
 
     private static void RefreshExistingWidgets()
     {
