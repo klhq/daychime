@@ -1,6 +1,8 @@
 using DaychimeWidget;
 
-static DateTimeOffset At(int day, int hour) => new(2026, 9, day, hour, 0, 0, TimeSpan.FromHours(8));
+// Work cycles use the machine's local wall clock. Keep fixtures local too, so
+// the same scenarios run on UTC CI workers and developer machines in any zone.
+static DateTimeOffset At(int day, int hour) => new(new DateTime(2026, 9, day, hour, 0, 0, DateTimeKind.Unspecified));
 static void Check(bool result, string scenario)
 {
     if (!result) throw new Exception($"Failed: {scenario}");

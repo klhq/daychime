@@ -12,7 +12,7 @@
 	<Identity
 	  Name="klhq.DaymarkWidget"
 	  Publisher="CN=C1775D8D-B1FD-4BF1-A1FF-7F1C3F0163BA"
-	  Version="1.0.37.0" />
+	  Version="1.0.38.0" />
 
 	<Properties>
 		<DisplayName>Daychime</DisplayName>
