@@ -26,15 +26,20 @@ No dedicated settings screen. Adaptive Cards' action model doesn't have room for
 
 ## Install
 
-Daychime will be installed and updated through Microsoft Store after its first certification. There is no separate installer, certificate, or download step for users.
+Get [Daychime from Microsoft Store](https://apps.microsoft.com/detail/9NJKQT7SNSJL) on Windows 11. No manual package download or certificate setup is needed.
+
+After installation, open `Win + W`, open the widget picker, and add Daychime. Microsoft Store handles app updates; use **Check for updates** in the Store to check manually.
+
+The features above describe the current source version. The published Store version may lag behind while an update is awaiting certification.
 
 See the [Privacy Policy](PRIVACY.md).
 
-## Build and install
+## Development builds
 
 This is a Windows Widget provider, so it cannot be run inside a normal Docker container: the Widget host, MSIX deployment, and certificate store are Windows integrations. Instead, the repository provides a Docker-like single build entry point that makes the Windows build reproducible and discoverable.
 
 **Prerequisites**
+
 - Visual Studio 2022 with the ".NET desktop development" and "Windows application development" workloads (provides MSBuild and the Windows App SDK/MSIX packaging tools).
 
 **Everyday development build**
@@ -47,7 +52,15 @@ This is a Windows Widget provider, so it cannot be run inside a normal Docker co
 ./scripts/Build.ps1 -Configuration Release -Architecture x64 -StoreUpload -OutputDirectory artifacts
 ```
 
-The script emits `artifacts\Daychime.msixupload`, ready to upload to Partner Center. Microsoft Store signs and distributes the package; no code-signing certificate is needed. Use `-Clean` to remove this project's generated build and package files before building. The Store is the user installation path after certification; then open `Win + W` → **Add widgets** and pin Daychime.
+The script emits `artifacts\Daychime.msixupload` for Partner Center, not for end-user installation. Microsoft Store signs and distributes the package; no code-signing certificate is needed for Store submission. Local MSIX installation requires developer signing. Use `-Clean` to remove this project's generated build and package files before building.
+
+## Releases
+
+Development uses `main` with version tags, not a full Gitflow branch model. Pull requests and pushes to `main` run tests and build checks. Pushing a `v*` tag runs tests and produces the `Daychime-store-upload` artifact in the **Build Microsoft Store package** workflow. The tag must match the package manifest version: for example, `v1.0.37` corresponds to `1.0.37.0`. Mismatched tags fail; the workflow does not change the version.
+
+A tag identifies release source, not Store approval. To submit an update, sign in to GitHub, open the matching successful run under [Actions](https://github.com/klhq/daychime/actions/workflows/store-package.yml), and download **Daychime-store-upload** from **Artifacts**. Extract the ZIP and upload `Daychime.msixupload` to Partner Center → **Packages**, then submit for certification.
+
+The workflow handles testing and packaging only; Store submission is manual. No Partner Center credentials, Entra tenant, or signing secrets are needed in GitHub. You can also use **Run workflow** to build an artifact without creating a tag.
 
 Release instructions for maintainers are in [docs/RELEASING.md](docs/RELEASING.md).
 Store listing copy and screenshot requirements are in [docs/STORE_LISTING.md](docs/STORE_LISTING.md).

@@ -1,18 +1,68 @@
 name: Build Microsoft Store package
+run-name: Validate and build Daychime (${{ github.ref_name }})
 
 on:
   push:
+    branches: [main]
     tags: ['v*']
+  pull_request:
+    branches: [main]
   workflow_dispatch:
+
+concurrency:
+  group: daychime-build-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
 
 jobs:
-  package:
+  verify:
     runs-on: windows-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+
+      - name: Validate package version and release tag
+        shell: pwsh
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if ($env:REF_TYPE -eq 'tag') {
+            ./scripts/Validate-Release.ps1 -Tag $env:REF_NAME
+          } else {
+            ./scripts/Validate-Release.ps1
+          }
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Test shift lifecycle
+        shell: pwsh
+        run: dotnet run --project tests/ShiftLifecycle.Tests.csproj --configuration Release
+
+      - name: Test release validation
+        shell: pwsh
+        run: ./tests/ReleaseValidation.Tests.ps1
+
+      - name: Build widget provider
+        if: github.ref_type != 'tag' && github.event_name != 'workflow_dispatch'
+        shell: pwsh
+        run: ./scripts/Build.ps1 -Configuration Release -Architecture x64
+
+  package:
+    needs: verify
+    if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
 
       - name: Build Store upload package
         shell: pwsh
@@ -24,3 +74,26 @@ jobs:
           name: Daychime-store-upload
           path: artifacts/Daychime.msixupload
           if-no-files-found: error
+          retention-days: 90
+
+      - name: Show download and submission instructions
+        shell: pwsh
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          [xml]$manifest = Get-Content src/DaychimeWidget/Package.appxmanifest
+          $version = $manifest.Package.Identity.Version
+          $hash = (Get-FileHash artifacts/Daychime.msixupload -Algorithm SHA256).Hash
+          @"
+          ## Daychime $version — Store submission package
+
+          Source commit: $env:GITHUB_SHA
+
+          1. Open [this workflow run]($env:RUN_URL) and download **Daychime-store-upload** under **Artifacts** (GitHub sign-in required).
+          2. Extract the ZIP and upload **Daychime.msixupload** to the existing Daychime submission in Partner Center → **Packages**.
+          3. Verify version **$version**, complete the submission, and submit for certification.
+
+          This workflow does **not** upload to Partner Center or publish to Microsoft Store. End users install from [Microsoft Store](https://apps.microsoft.com/detail/9NJKQT7SNSJL), not this artifact.
+
+          SHA256: $hash
+          "@ | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
