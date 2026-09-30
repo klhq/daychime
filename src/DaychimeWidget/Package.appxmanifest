@@ -6,12 +6,13 @@
   xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
   xmlns:com="http://schemas.microsoft.com/appx/manifest/com/windows10"
-  IgnorableNamespaces="uap uap3 rescap">
+  xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
+  IgnorableNamespaces="uap uap3 rescap desktop">
 
 	<Identity
 	  Name="klhq.DaymarkWidget"
 	  Publisher="CN=C1775D8D-B1FD-4BF1-A1FF-7F1C3F0163BA"
-	  Version="1.0.32.0" />
+	  Version="1.0.37.0" />
 
 	<Properties>
 		<DisplayName>Daychime</DisplayName>
@@ -38,8 +39,14 @@
 			  Square150x150Logo="Assets\Square150x150Logo.png"
 			  Square44x44Logo="Assets\Square44x44Logo.png" />
 			<Extensions>
+				<desktop:Extension Category="windows.toastNotificationActivation">
+					<desktop:ToastNotificationActivation ToastActivatorCLSID="7C68559D-9F68-4204-AB41-65E463F76304" />
+				</desktop:Extension>
 				<com:Extension Category="windows.comServer">
 					<com:ComServer>
+					<com:ExeServer Executable="DaychimeWidget.exe" Arguments="-ToastActivated" DisplayName="Daychime">
+						<com:Class Id="7C68559D-9F68-4204-AB41-65E463F76304" DisplayName="Daychime notification" />
+					</com:ExeServer>
 					<com:ExeServer Executable="DaychimeWidget.exe" Arguments="-RegisterProcessAsComServer" DisplayName="Daychime">
 						<com:Class Id="80DAE84C-DE3C-4F02-8ECD-DCDD1CDECC15" DisplayName="Daychime" />
 						</com:ExeServer>

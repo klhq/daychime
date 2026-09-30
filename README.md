@@ -8,14 +8,15 @@ A focused Windows 11 widget for tracking your workday: clock in with one tap, se
 
 - **One-tap clock-in** — press "Clock in now" and the current time is recorded for the day.
 - **Estimated finish, always visible** — computed from clock-in time plus a configurable workday length.
-- **Clear end-of-day state** — once the finish time arrives, the widget switches to “Finished at” and shows a completion indicator.
+- **Actual clock-out** — clock out when you leave to record the real finish time and elapsed time. Undo an accidental clock-out before starting another shift.
 - **Configurable workday length** — a small accent-colored chip cycles through presets (8, 8.5, 9, 9.5, 10 hours); default is 9.
-- **Auto clock-in after your chosen time** (opt-in) — records the first eligible unlock in each work cycle. Set 06:00 for a typical day job or 18:00 for a night shift.
+- **Auto clock-in after your chosen time** (opt-in) — records the first eligible unlock in each work cycle. If Windows stopped the widget provider, opening the widget uses the opening time as a fallback. Set 06:00 for a typical day job or 18:00 for a night shift.
 - **Edit or clear** — fix a wrong clock-in time, or clear the current shift entirely (with a confirm step).
 - **12/24-hour display** — a one-tap chip next to "Now", independent of the clock-in flow.
-- **Finish-time reminder** — one toast notification when your estimated finish time arrives; the widget never auto clocks-out or auto-clears.
+- **Finish-time reminder** — a Windows notification at your estimated finish time, with a **Clock out now** button that records the time you click. Old notifications cannot clock out a newer shift; undo an accidental clock-out in the widget. Windows notification settings apply, and reminders can be missed when the computer is off.
 - **Timezone-safe** — clock-in and finish times always display in your machine's *current* local timezone, even if it changed after you clocked in (travel, a VM); a small note appears only when that adjustment actually happened.
-- **Shift-based, not date-based** — a shift can cross midnight. It remains visible after completion until you explicitly start a new workday or clear it.
+- **Overnight and next-day handling** — a shift can cross midnight. A missed clock-out does not block the next eligible auto clock-in: the previous shift is marked as missing an actual clock-out, and the new shift uses the unlock time. A stale shift clears 24 hours after its estimated finish if no new shift starts.
+- **Recent shift** — the last shift stays in a compact summary for 24 hours after its actual or estimated finish, clearly distinguishing recorded and missing clock-outs.
 - **Small / medium / large layouts**, light and dark themes.
 - **Localized**: English, Traditional Chinese, Simplified Chinese (follows Windows' display language automatically).
 

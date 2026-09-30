@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Windows.Storage;
 using Windows.UI.Notifications;
+using System.Xml.Linq;
 
 namespace DaychimeWidget;
 
@@ -14,6 +15,7 @@ internal sealed class Daychime : WidgetImplBase
     private const string FinishReminderTag = "finish-reminder";
     private const string FinishReminderGroup = "workday";
     private const string ShiftPrefix = "shift|";
+    private const string ShiftStatePrefix = "v2|";
     private const string EditingPrefix = "editing|";
     private const string EditingErrorPrefix = "editing-error|";
     private const string ConfirmClearPrefix = "confirm-clear|";
@@ -21,22 +23,26 @@ internal sealed class Daychime : WidgetImplBase
     private const string AutoClockInEnabledKey = "AutoClockInOnUnlock";
     private const string AutoClockInAfterKey = "AutoClockInAfter";
     private const string LastAutoClockInCycleKey = "LastAutoClockInCycle";
-    private static readonly double[] WorkHoursPresets = { 8, 8.5, 9, 9.5, 10 };
-
-    private readonly record struct Shift(DateTimeOffset Start, double WorkHours)
-    {
-        public DateTimeOffset Finish => Start.AddHours(WorkHours);
-    }
+    private static readonly double[] WorkHoursPresets = ShiftLifecycle.WorkHoursPresets;
 
     public Daychime(string widgetId, string startingState) : base(widgetId, startingState) { }
 
     public override void OnActionInvoked(WidgetActionInvokedArgs args)
     {
+        var stored = ReadSnapshot();
+        var current = ShiftLifecycle.Normalize(stored, GetCurrentTime());
+        if (current != stored) WriteSnapshot(current);
         switch (args.Verb)
         {
-            case "clockIn": StartShift(GetCurrentTime()); break;
+            case "clockIn":
+                var clockInTime = GetCurrentTime();
+                if (ReadSnapshot().Current is not Shift runningShift || runningShift.Finish <= clockInTime)
+                    StartShift(clockInTime);
+                break;
+            case "clockOut": ClockOut(GetCurrentTime()); break;
+            case "undoClockOut": UndoClockOut(); break;
             case "edit":
-                if (TryGetShift(State, out _) && !State.StartsWith(EditingPrefix, StringComparison.Ordinal))
+                if (ReadSnapshot().Current is not null && !State.StartsWith(EditingPrefix, StringComparison.Ordinal))
                     state = EditingPrefix + GetBaseState(State);
                 break;
             case "cancelEdit": state = State.StartsWith(EditingPrefix, StringComparison.Ordinal) ? GetBaseState(State) : State; break;
@@ -48,7 +54,7 @@ internal sealed class Daychime : WidgetImplBase
             case "cycleWorkHours": CycleWorkHours(); break;
             case "askClear": state = ConfirmClearPrefix + GetBaseState(State); break;
             case "cancelClear": state = State.StartsWith(ConfirmClearPrefix, StringComparison.Ordinal) ? GetBaseState(State) : State; break;
-            case "clear": state = string.Empty; break;
+            case "clear": ClearCurrentShift(); break;
             case "saveTime": SaveClockInTime(args.Data); break;
         }
         TryUpdateFinishReminder();
@@ -59,15 +65,19 @@ internal sealed class Daychime : WidgetImplBase
 
     public override string GetDataForWidget()
     {
+        var now = GetCurrentTime();
+        var stored = ReadSnapshot();
+        var snapshot = ShiftLifecycle.Normalize(stored, now);
+        if (snapshot != stored) WriteSnapshot(snapshot);
         var strings = JsonNode.Parse(ReadPackageFileFromUri(GetStringsUri()))!.AsObject();
         var confirmingClear = State.StartsWith(ConfirmClearPrefix, StringComparison.Ordinal);
         var isEditing = State.StartsWith(EditingPrefix, StringComparison.Ordinal) || State.StartsWith(EditingErrorPrefix, StringComparison.Ordinal);
         var hasTimeError = State.StartsWith(EditingErrorPrefix, StringComparison.Ordinal);
         var isAutoSettings = State.StartsWith(AutoSettingsPrefix, StringComparison.Ordinal);
-        var clockedIn = TryGetShift(State, out var shift);
+        var clockedIn = snapshot.Current.HasValue;
+        var shift = snapshot.Current.GetValueOrDefault();
         var start = clockedIn ? shift.Start.ToLocalTime() : default;
         var finish = clockedIn ? shift.Finish.ToLocalTime() : default;
-        var now = GetCurrentTime();
         var isWorkdayComplete = clockedIn && finish <= now;
         var use24Hour = GetUse24Hour();
         var timeFormat = use24Hour ? "HH:mm" : CultureInfo.CurrentCulture.DateTimeFormat.ShortTimePattern;
@@ -89,6 +99,10 @@ internal sealed class Daychime : WidgetImplBase
             ["finish"] = clockedIn ? finish.ToString(timeFormat, CultureInfo.CurrentCulture) : "--:--",
             ["endsNextDay"] = clockedIn && finish.Date > start.Date,
             ["isWorkdayComplete"] = isWorkdayComplete,
+            ["canClockOut"] = clockedIn && !confirmingClear && !isEditing && !isAutoSettings,
+            ["canUndoClockOut"] = !clockedIn && snapshot.Previous is Shift { ClockOut: not null } && !confirmingClear && !isEditing && !isAutoSettings,
+            ["hasPreviousShift"] = snapshot.Previous is not null,
+            ["previousShiftSummary"] = FormatPreviousShift(snapshot.Previous, strings, timeFormat),
             ["now"] = now.ToString(timeFormat, CultureInfo.CurrentCulture),
             ["use24Hour"] = use24Hour,
             ["formatBadge"] = use24Hour ? "24h" : "12h",
@@ -103,10 +117,12 @@ internal sealed class Daychime : WidgetImplBase
             ["autoClockInPrimaryAction"] = GetString(strings, GetAutoClockInOnUnlock() ? "saveChanges" : "turnOnAutoClockIn"),
             ["turnOffAutoClockIn"] = GetString(strings, "turnOffAutoClockIn"),
             ["clockInLabel"] = GetString(strings, "clockInLabel"),
-            ["finishLabel"] = GetString(strings, isWorkdayComplete ? "finishedAtLabel" : "finishLabel"),
+            ["finishLabel"] = GetString(strings, "finishLabel"),
             ["workdayComplete"] = GetString(strings, "workdayComplete"),
             ["endsTomorrow"] = GetString(strings, "endsTomorrow"),
             ["clockInActionTitle"] = GetString(strings, isWorkdayComplete ? "startNewWorkday" : "clockInNow"),
+            ["clockOutActionTitle"] = GetString(strings, "clockOutNow"),
+            ["undoClockOutActionTitle"] = GetString(strings, "undoClockOut"),
             ["editTime"] = GetString(strings, "editTime"),
             ["clockInTimeLabel"] = GetString(strings, "clockInTimeLabel"),
             ["invalidTime"] = GetString(strings, "invalidTime"),
@@ -125,28 +141,92 @@ internal sealed class Daychime : WidgetImplBase
         }.ToJsonString();
     }
 
-    public override void OnSessionUnlock()
+    public override void OnSessionUnlock() => TryAutoClockIn();
+
+    public override void OnWidgetOpened()
+    {
+        TryAutoClockIn();
+        TryUpdateFinishReminder();
+    }
+
+    internal void RestoreFinishReminder() => TryUpdateFinishReminder();
+
+    internal void CancelFinishReminder()
+    {
+        try
+        {
+            var notifier = ToastNotificationManager.CreateToastNotifier();
+            foreach (var scheduled in notifier.GetScheduledToastNotifications())
+                if (scheduled.Tag == FinishReminderTag && scheduled.Group == FinishReminderGroup
+                    && ReminderBelongsToThisWidget(scheduled.Content.GetXml()))
+                    notifier.RemoveFromSchedule(scheduled);
+            foreach (var toast in ToastNotificationManager.History.GetHistory())
+                if (toast.Tag == FinishReminderTag && toast.Group == FinishReminderGroup
+                    && ReminderBelongsToThisWidget(toast.Content.GetXml()))
+                    ToastNotificationManager.History.Remove(toast.Tag, toast.Group);
+        }
+        catch (Exception ex) { ProviderDiagnostics.Write($"Finish reminder cancellation failed: {ex}"); }
+    }
+
+    private void TryAutoClockIn()
     {
         if (!GetAutoClockInOnUnlock()) return;
         var now = GetCurrentTime();
         var earliest = GetAutoClockInAfter();
         if (TimeOnly.FromDateTime(now.LocalDateTime) < earliest) return;
-        var cycle = GetAutoClockInCycle(now, earliest);
-        if (ApplicationData.Current.LocalSettings.Values[LastAutoClockInCycleKey] is string lastCycle && lastCycle == cycle) return;
-        if (TryGetShift(State, out var activeShift) && activeShift.Finish > now)
+        var cycle = ShiftLifecycle.GetCycle(now, earliest);
+        var snapshot = ReadSnapshot();
+        if (snapshot.LastCycle == cycle)
         {
-            ApplicationData.Current.LocalSettings.Values[LastAutoClockInCycleKey] = cycle;
+            ProviderDiagnostics.Write($"Auto clock-in skipped for {Id}: cycle {cycle} already handled.");
+            return;
+        }
+        if (!ShiftLifecycle.CanAutoClockIn(snapshot, now, earliest))
+        {
+            ProviderDiagnostics.Write($"Auto clock-in deferred for {Id}: current shift is still active.");
             return;
         }
         StartShift(now);
-        ApplicationData.Current.LocalSettings.Values[LastAutoClockInCycleKey] = cycle;
+        ProviderDiagnostics.Write($"Auto clock-in recorded for {Id} at {now:O} (cycle {cycle}).");
         TryUpdateFinishReminder();
     }
 
     private void StartShift(DateTimeOffset startedAt)
     {
-        state = SerializeShift(new Shift(startedAt, GetDefaultWorkHours()));
-        ApplicationData.Current.LocalSettings.Values[LastAutoClockInCycleKey] = GetAutoClockInCycle(startedAt, GetAutoClockInAfter());
+        WriteSnapshot(ShiftLifecycle.Start(ReadSnapshot(), startedAt, GetDefaultWorkHours(), GetAutoClockInAfter()));
+    }
+
+    private void ClockOut(DateTimeOffset clockedOutAt)
+    {
+        var snapshot = ReadSnapshot();
+        WriteSnapshot(ShiftLifecycle.ClockOut(snapshot, clockedOutAt));
+    }
+
+    internal bool ClockOutFromReminder(string reminderKey, DateTimeOffset clickedAt)
+    {
+        var snapshot = ReadSnapshot();
+        if (ShiftLifecycle.Normalize(snapshot, clickedAt).Current is not Shift current
+            || ShiftLifecycle.GetReminderKey(current) != reminderKey || clickedAt < current.Start) return false;
+        var updated = ShiftLifecycle.ClockOutFromReminder(snapshot, reminderKey, clickedAt);
+        var originalState = State;
+        WriteSnapshot(updated);
+        // Persist before cancelling the toast so a failed widget update remains retryable.
+        try { UpdateWidget(); }
+        catch { state = originalState; throw; }
+        TryUpdateFinishReminder();
+        ProviderDiagnostics.Write($"Notification clock-out recorded for {Id} at {clickedAt:O}.");
+        return true;
+    }
+
+    private void UndoClockOut()
+    {
+        WriteSnapshot(ShiftLifecycle.UndoClockOut(ReadSnapshot()));
+    }
+
+    private void ClearCurrentShift()
+    {
+        var snapshot = ReadSnapshot();
+        WriteSnapshot(snapshot with { Current = null });
     }
 
     private void SaveClockInTime(string data)
@@ -156,8 +236,13 @@ internal sealed class Daychime : WidgetImplBase
             using var document = JsonDocument.Parse(data);
             if (document.RootElement.TryGetProperty("clockIn", out var time) && TryParseClockIn(time.GetString(), out var parsed))
             {
-                var workHours = TryGetShift(State, out var existing) ? existing.WorkHours : GetDefaultWorkHours();
-                state = SerializeShift(new Shift(GetMostRecentOccurrence(parsed, GetCurrentTime()), workHours));
+                var snapshot = ReadSnapshot();
+                if (snapshot.Current is not Shift existing) return;
+                var changedStart = GetMostRecentOccurrence(parsed, GetCurrentTime());
+                WriteSnapshot(snapshot with {
+                    Current = ShiftLifecycle.Revise(existing with { Start = changedStart }),
+                    LastCycle = ShiftLifecycle.GetCycle(changedStart, GetAutoClockInAfter())
+                });
                 return;
             }
         }
@@ -187,10 +272,12 @@ internal sealed class Daychime : WidgetImplBase
 
     private void CycleWorkHours()
     {
-        var current = TryGetShift(State, out var shift) ? shift.WorkHours : GetDefaultWorkHours();
+        var snapshot = ReadSnapshot();
+        var current = snapshot.Current?.WorkHours ?? GetDefaultWorkHours();
         var next = WorkHoursPresets[(Array.IndexOf(WorkHoursPresets, current) + 1) % WorkHoursPresets.Length];
         ApplicationData.Current.LocalSettings.Values["WorkHours"] = next;
-        if (TryGetShift(State, out shift)) state = SerializeShift(new Shift(shift.Start, next));
+        if (snapshot.Current is Shift shift)
+            WriteSnapshot(snapshot with { Current = ShiftLifecycle.Revise(shift with { WorkHours = next }) });
     }
 
     private void UpdateWidget() => WidgetManager.GetDefault().UpdateWidget(new WidgetUpdateRequestOptions(Id) { Data = GetDataForWidget(), CustomState = State });
@@ -223,9 +310,24 @@ internal sealed class Daychime : WidgetImplBase
         return currentState;
     }
 
-    private static bool TryGetShift(string currentState, out Shift shift)
+    private ShiftSnapshot ReadSnapshot()
     {
-        var raw = GetBaseState(currentState);
+        var raw = GetBaseState(State);
+        if (raw.StartsWith(ShiftStatePrefix, StringComparison.Ordinal))
+        {
+            var parts = raw.Split('|');
+            if (parts.Length == 4 && TryReadShift(parts[1], out var current) && TryReadShift(parts[2], out var previous))
+                return new ShiftSnapshot(current, previous, string.IsNullOrEmpty(parts[3]) ? null : parts[3]);
+            ProviderDiagnostics.Write($"Invalid shift state for widget {Id}.");
+            return default;
+        }
+
+        var lastCycle = ApplicationData.Current.LocalSettings.Values[LastAutoClockInCycleKey] as string;
+        return TryGetLegacyShift(raw, out var legacy) ? new ShiftSnapshot(legacy, null, lastCycle) : new ShiftSnapshot(null, null, lastCycle);
+    }
+
+    private static bool TryGetLegacyShift(string raw, out Shift shift)
+    {
         if (raw.StartsWith(ShiftPrefix, StringComparison.Ordinal))
         {
             var parts = raw.Split('|');
@@ -244,7 +346,25 @@ internal sealed class Daychime : WidgetImplBase
         return false;
     }
 
-    private static string SerializeShift(Shift shift) => $"{ShiftPrefix}{shift.Start:O}|{shift.WorkHours.ToString("0.#", CultureInfo.InvariantCulture)}";
+    private static bool TryReadShift(string raw, out Shift? shift) => ShiftStateCodec.TryRead(raw, out shift);
+
+    private static string SerializeShift(Shift? shift) => ShiftStateCodec.Serialize(shift);
+
+    private void WriteSnapshot(ShiftSnapshot snapshot) =>
+        state = $"{ShiftStatePrefix}{SerializeShift(snapshot.Current)}|{SerializeShift(snapshot.Previous)}|{snapshot.LastCycle}";
+
+    private static string FormatPreviousShift(Shift? previous, JsonObject strings, string timeFormat)
+    {
+        if (previous is not Shift shift) return string.Empty;
+        string FormatTime(DateTimeOffset value) => $"{value.ToLocalTime().ToString("M/d", CultureInfo.CurrentCulture)} {value.ToLocalTime().ToString(timeFormat, CultureInfo.CurrentCulture)}";
+        if (shift.ClockOut is DateTimeOffset clockOut)
+        {
+            var elapsedMinutes = (long)Math.Round((clockOut - shift.Start).TotalMinutes);
+            var elapsed = string.Format(CultureInfo.CurrentCulture, GetString(strings, "elapsedHoursMinutes"), elapsedMinutes / 60, elapsedMinutes % 60);
+            return string.Format(CultureInfo.CurrentCulture, GetString(strings, "previousClockedOutSummary"), FormatTime(shift.Start), FormatTime(clockOut), elapsed);
+        }
+        return string.Format(CultureInfo.CurrentCulture, GetString(strings, "previousUnrecordedSummary"), FormatTime(shift.Start), FormatTime(shift.Finish));
+    }
 
     private static bool GetUse24Hour()
     {
@@ -259,13 +379,6 @@ internal sealed class Daychime : WidgetImplBase
     {
         if (ApplicationData.Current.LocalSettings.Values[AutoClockInAfterKey] is string stored && TryParseClockIn(stored, out var parsed)) return parsed;
         return new TimeOnly(6, 0);
-    }
-
-    private static string GetAutoClockInCycle(DateTimeOffset now, TimeOnly earliest)
-    {
-        var local = now.LocalDateTime;
-        var date = local.TimeOfDay < earliest.ToTimeSpan() ? local.Date.AddDays(-1) : local.Date;
-        return date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
     }
 
     private static double GetDefaultWorkHours()
@@ -293,16 +406,70 @@ internal sealed class Daychime : WidgetImplBase
     private void UpdateFinishReminder()
     {
         var notifier = ToastNotificationManager.CreateToastNotifier();
-        foreach (var scheduled in notifier.GetScheduledToastNotifications())
-            if (scheduled.Tag == FinishReminderTag && scheduled.Group == FinishReminderGroup) notifier.RemoveFromSchedule(scheduled);
-        if (!TryGetShift(State, out var shift)) return;
-        var finish = shift.Finish.ToLocalTime();
+        var scheduledReminders = notifier.GetScheduledToastNotifications();
+        var shift = ShiftLifecycle.Normalize(ReadSnapshot(), GetCurrentTime()).Current;
+        var arguments = shift is Shift current
+            ? $"action=clockOut&widget={Uri.EscapeDataString(Id)}&shift={Uri.EscapeDataString(ShiftLifecycle.GetReminderKey(current))}" : null;
+        // Keep the current reminder even when its delivery time has just passed: Windows may
+        // still be delivering it. Only invalidated revisions are removed from the schedule/history.
+        foreach (var scheduled in scheduledReminders)
+            if (scheduled.Tag == FinishReminderTag && scheduled.Group == FinishReminderGroup
+                && !HasReminderArguments(scheduled.Content.GetXml(), arguments)) notifier.RemoveFromSchedule(scheduled);
+        foreach (var toast in ToastNotificationManager.History.GetHistory())
+            if (toast.Tag == FinishReminderTag && toast.Group == FinishReminderGroup
+                && !HasReminderArguments(toast.Content.GetXml(), arguments))
+                ToastNotificationManager.History.Remove(toast.Tag, toast.Group);
+        if (shift is not Shift activeShift) return;
+        var finish = activeShift.Finish.ToLocalTime();
         if (finish <= GetCurrentTime()) return;
         var strings = JsonNode.Parse(ReadPackageFileFromUri(GetStringsUri()))!.AsObject();
-        var toastXml = ToastNotificationManager.GetTemplateContent(ToastTemplateType.ToastText02);
-        var text = toastXml.GetElementsByTagName("text");
-        text[0]!.InnerText = strings["finishNotificationTitle"]!.GetValue<string>();
-        text[1]!.InnerText = string.Format(CultureInfo.CurrentCulture, strings["finishNotificationBody"]!.GetValue<string>(), finish.ToString(GetUse24Hour() ? "HH:mm" : CultureInfo.CurrentCulture.DateTimeFormat.ShortTimePattern, CultureInfo.CurrentCulture));
+        var body = string.Format(CultureInfo.CurrentCulture, strings["finishNotificationBody"]!.GetValue<string>(), finish.ToString(GetUse24Hour() ? "HH:mm" : CultureInfo.CurrentCulture.DateTimeFormat.ShortTimePattern, CultureInfo.CurrentCulture));
+        var payload = new XElement("toast", new XAttribute("launch", "action=view"),
+            new XElement("visual", new XElement("binding", new XAttribute("template", "ToastGeneric"),
+                new XElement("text", GetString(strings, "finishNotificationTitle")), new XElement("text", body))),
+            new XElement("actions", new XElement("action", new XAttribute("content", GetString(strings, "clockOutNow")),
+                new XAttribute("arguments", arguments), new XAttribute("activationType", "foreground"))));
+        var toastXml = new Windows.Data.Xml.Dom.XmlDocument();
+        toastXml.LoadXml(payload.ToString(SaveOptions.DisableFormatting));
+        foreach (var scheduled in scheduledReminders)
+            if (scheduled.Tag == FinishReminderTag && scheduled.Group == FinishReminderGroup
+                && HasReminderArguments(scheduled.Content.GetXml(), arguments))
+            {
+                // Preserve an already valid reminder. Formatting-only changes must not create
+                // a cancellation window or replace a notification about to be delivered.
+                if (scheduled.DeliveryTime == finish) return;
+                notifier.RemoveFromSchedule(scheduled);
+            }
         notifier.AddToSchedule(new ScheduledToastNotification(toastXml, finish) { Tag = FinishReminderTag, Group = FinishReminderGroup });
+        ProviderDiagnostics.Write($"Finish reminder scheduled for {Id} at {finish:O}; notifications: {notifier.Setting}.");
+    }
+
+    private static bool HasReminderArguments(string xml, string arguments)
+    {
+        if (arguments is null) return false;
+        try
+        {
+            foreach (var action in XElement.Parse(xml).Descendants("action"))
+                if ((string)action.Attribute("arguments") == arguments) return true;
+        }
+        catch (System.Xml.XmlException) { }
+        return false;
+    }
+
+    private bool ReminderBelongsToThisWidget(string xml)
+    {
+        try
+        {
+            var prefix = $"action=clockOut&widget={Uri.EscapeDataString(Id)}&shift=";
+            var hasAction = false;
+            foreach (var action in XElement.Parse(xml).Descendants("action"))
+            {
+                hasAction = true;
+                if (((string)action.Attribute("arguments"))?.StartsWith(prefix, StringComparison.Ordinal) == true) return true;
+            }
+            // Legacy text-only reminders predate widget-bound activation.
+            return !hasAction;
+        }
+        catch (System.Xml.XmlException) { return false; }
     }
 }

@@ -5,8 +5,9 @@ using DaychimeWidget;
 using Microsoft.Win32;
 using Microsoft.Windows.Widgets.Providers;
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 [ComVisible(true)]
 [ComDefaultInterface(typeof(IWidgetProvider))]
@@ -47,8 +48,11 @@ public sealed class WidgetProvider : IWidgetProvider
         {
             try
             {
-                widget.OnSessionUnlock();
-                SendWidgetUpdate(widget);
+                lock (widget)
+                {
+                    widget.OnSessionUnlock();
+                    SendWidgetUpdate(widget);
+                }
             }
             catch (Exception ex)
             {
@@ -91,8 +95,13 @@ public sealed class WidgetProvider : IWidgetProvider
                         {
                             // Need to recover this instance
                             var widgetInstance = WidgetImpls[context.DefinitionId](context.Id, widgetInfo.CustomState);
-                            WidgetInstances[context.Id] = widgetInstance;
-                            SendWidgetUpdate(widgetInstance, includeTemplate: true);
+                            if (!WidgetInstances.TryAdd(context.Id, widgetInstance))
+                                continue;
+                            lock (widgetInstance)
+                            {
+                                SendWidgetUpdate(widgetInstance, includeTemplate: true);
+                                if (widgetInstance is Daychime daychime) daychime.RestoreFinishReminder();
+                            }
                             ProviderDiagnostics.Write($"Recovered content sent for {context.Id}.");
                         }
                         else
@@ -116,11 +125,63 @@ public sealed class WidgetProvider : IWidgetProvider
         }
     }
 
-    private static readonly Dictionary<string, WidgetCreateDelegate> WidgetImpls = new() {
+    private static readonly System.Collections.Generic.Dictionary<string, WidgetCreateDelegate> WidgetImpls = new() {
         [Daychime.DefinitionId] = (widgetId, initialState) => new Daychime(widgetId, initialState)
     };
 
-    private static Dictionary<string, WidgetImplBase> WidgetInstances = new();
+    private static readonly ConcurrentDictionary<string, WidgetImplBase> WidgetInstances = new();
+
+    internal static void RestoreExistingWidgets() => RecoverRunningWidgets();
+
+    internal static void ClockOutFromNotification(string widgetId, string reminderKey, DateTimeOffset clickedAt)
+    {
+        RecoverRunningWidgets();
+        if (WidgetInstances.TryGetValue(widgetId, out var instance) && instance is Daychime widget)
+        {
+            lock (widget)
+            {
+                // An unpin may already be persisted by the host while its DeleteWidget callback
+                // is still queued. Never write a clock-out back to a widget that no longer exists.
+                var infos = WidgetManager.GetDefault().GetWidgetInfos()
+                    ?? throw new InvalidOperationException("Widget list unavailable during notification activation.");
+                var exists = false;
+                foreach (var info in infos)
+                    if (info.WidgetContext?.Id == widgetId && info.WidgetContext.DefinitionId == Daychime.DefinitionId)
+                    {
+                        exists = true;
+                        break;
+                    }
+                if (!exists)
+                {
+                    ProviderDiagnostics.Write($"Ignored notification for deleted widget {widgetId}.");
+                    return;
+                }
+                if (!widget.ClockOutFromReminder(reminderKey, clickedAt))
+                    ProviderDiagnostics.Write($"Ignored outdated clock-out notification for {widgetId}.");
+            }
+        }
+        else ProviderDiagnostics.Write($"Ignored notification for missing widget {widgetId}.");
+    }
+    private static readonly Timer RefreshTimer = new(static _ => RefreshVisibleWidgets(), null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
+
+    private static void RefreshVisibleWidgets()
+    {
+        foreach (var widget in WidgetInstances.Values)
+        {
+            try
+            {
+                lock (widget)
+                {
+                    if (widget.IsActivated)
+                        SendWidgetUpdate(widget);
+                }
+            }
+            catch (Exception ex)
+            {
+                ProviderDiagnostics.Write($"Periodic update failed for {widget.Id}: {ex}");
+            }
+        }
+    }
 
     private static WidgetUpdateRequestOptions CreateUpdateRequest(WidgetImplBase widget, bool includeTemplate = false)
     {
@@ -178,7 +239,10 @@ public sealed class WidgetProvider : IWidgetProvider
     {
         Console.WriteLine($"DeleteWidget id: {widgetId}");
 
-        WidgetInstances.Remove(widgetId);
+        WidgetInstances.TryRemove(widgetId, out var removedWidget);
+        if (removedWidget is Daychime removedDaychime)
+            lock (removedDaychime)
+                removedDaychime.CancelFinishReminder();
 
         var widgetIds = WidgetManager.GetDefault().GetWidgetIds();
         if (widgetIds != null)
@@ -218,7 +282,8 @@ public sealed class WidgetProvider : IWidgetProvider
 
         try
         {
-            widget.OnActionInvoked(actionInvokedArgs);
+            lock (widget)
+                widget.OnActionInvoked(actionInvokedArgs);
         }
         catch (Exception ex)
         {
@@ -226,7 +291,8 @@ public sealed class WidgetProvider : IWidgetProvider
             ProviderDiagnostics.Write($"Action failed for {actionInvokedArgs.WidgetContext.Id}: {ex}");
             try
             {
-                SendWidgetUpdate(widget);
+                lock (widget)
+                    SendWidgetUpdate(widget);
             }
             catch (Exception updateEx)
             {
@@ -244,7 +310,8 @@ public sealed class WidgetProvider : IWidgetProvider
     {
         Console.WriteLine($"OnWidgetContextChanged id: {contextChangedArgs.WidgetContext.Id} definitionId: {contextChangedArgs.WidgetContext.DefinitionId}");
         if (WidgetInstances.TryGetValue(contextChangedArgs.WidgetContext.Id, out var widget))
-            widget.OnWidgetContextChanged(contextChangedArgs);
+            lock (widget)
+                widget.OnWidgetContextChanged(contextChangedArgs);
     }
 
     // Handle the Activate call. This function is called when widgets host starts listening
@@ -267,8 +334,12 @@ public sealed class WidgetProvider : IWidgetProvider
             return;
         }
 
-        widget.Activate(widgetContext);
-        SendWidgetUpdate(widget);
+        lock (widget)
+        {
+            widget.Activate(widgetContext);
+            widget.OnWidgetOpened();
+            SendWidgetUpdate(widget);
+        }
     }
 
     // Handle the Deactivate call. This function is called when widgets host stops listening
@@ -279,6 +350,7 @@ public sealed class WidgetProvider : IWidgetProvider
     {
         Console.WriteLine($"Deactivate id: {widgetId}");
         if (WidgetInstances.TryGetValue(widgetId, out var widget))
-            widget.Deactivate();
+            lock (widget)
+                widget.Deactivate();
     }
 }

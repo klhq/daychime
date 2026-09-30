@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\src\DaychimeWidget\ShiftLifecycle.cs" Link="ShiftLifecycle.cs" />
+    <Compile Include="..\src\DaychimeWidget\ShiftStateCodec.cs" Link="ShiftStateCodec.cs" />
+  </ItemGroup>
+</Project>

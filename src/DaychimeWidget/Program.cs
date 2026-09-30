@@ -24,7 +24,7 @@ namespace DaychimeWidget
         {
             ProviderDiagnostics.Write($"Started: {string.Join(' ', args)}");
             Console.WriteLine("DaychimeWidget Starting...");
-            if (args.Length > 0 && args[0] == "-RegisterProcessAsComServer")
+            if (args.Length > 0 && (args[0] == "-RegisterProcessAsComServer" || args[0] == "-ToastActivated"))
             {
                 WinRT.ComWrappersSupport.InitializeComWrappers();
                 using (var manager = RegistrationManager<WidgetProvider>.RegisterProvider())
@@ -33,6 +33,7 @@ namespace DaychimeWidget
                     Console.WriteLine("Widget Provider registered.");
 
                     RefreshExistingWidgets();
+                    using var notifications = NotificationActivation.Register();
 
                     var existingWidgets = WidgetManager.GetDefault().GetWidgetIds();
                     if (existingWidgets != null)
@@ -78,21 +79,7 @@ namespace DaychimeWidget
     {
         try
         {
-            var widgetManager = WidgetManager.GetDefault();
-            foreach (var widgetInfo in widgetManager.GetWidgetInfos() ?? [])
-            {
-                var context = widgetInfo.WidgetContext;
-                if (context?.DefinitionId != Daychime.DefinitionId)
-                    continue;
-
-                var widget = new Daychime(context.Id, widgetInfo.CustomState);
-                widgetManager.UpdateWidget(new WidgetUpdateRequestOptions(context.Id)
-                {
-                    Data = widget.GetDataForWidget(),
-                    CustomState = widget.State
-                });
-                ProviderDiagnostics.Write($"Refreshed existing widget {context.Id}.");
-            }
+            WidgetProvider.RestoreExistingWidgets();
         }
         catch (Exception ex)
         {

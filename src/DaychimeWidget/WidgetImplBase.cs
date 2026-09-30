@@ -39,6 +39,7 @@ namespace DaychimeWidget
         public virtual void Activate(WidgetContext widgetContext) { isActivated = true; }
         public virtual void Deactivate() { isActivated = false; }
         public virtual void OnActionInvoked(WidgetActionInvokedArgs actionInvokedArgs) { }
+        public virtual void OnWidgetOpened() { }
         public virtual void OnWidgetContextChanged(WidgetContextChangedArgs contextChangedArgs) { }
         public virtual void OnSessionUnlock() { }
 
