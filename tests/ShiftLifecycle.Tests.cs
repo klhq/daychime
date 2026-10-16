@@ -94,6 +94,17 @@ Check(!SessionActivityEvidence.TryRead(eventXml, "PC\\Other", "S-1-5-21-123", 1,
 var unlockXml = "<Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing'/><EventID>4801</EventID><TimeCreated SystemTime='2026-10-15T01:07:00Z'/></System><EventData><Data Name='TargetUserSid'>S-1-5-21-123</Data><Data Name='SessionId'>1</Data></EventData></Event>";
 Check(SessionActivityEvidence.TryRead(unlockXml, "PC\\Worker", "S-1-5-21-123", 1, out _)
     && !SessionActivityEvidence.TryRead(unlockXml, "PC\\Worker", "S-1-5-21-456", 1, out _), "unlock parser requires the correct account SID");
+string WinlogonXml(string code, string subscriber = "Sens", string sid = "S-1-5-21-123") =>
+    $"<Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Winlogon'/><EventID>811</EventID><TimeCreated SystemTime='2026-10-16T01:15:50.0814269Z'/><Security UserID='{sid}'/></System><EventData><Data Name='Event'>{code}</Data><Data Name='SubscriberName'>{subscriber}</Data></EventData></Event>";
+Check(SessionActivityEvidence.TryRead(WinlogonXml("5"), "PC\\Worker", "S-1-5-21-123", 1, out var winlogonUnlock)
+    && winlogonUnlock == DateTimeOffset.Parse("2026-10-16T01:15:50.0814269Z"), "Winlogon unlock notification preserves the actual timestamp");
+Check(SessionActivityEvidence.TryRead(WinlogonXml("2"), "PC\\Worker", "S-1-5-21-123", 1, out _), "Winlogon logon notification counts as session activity");
+Check(!SessionActivityEvidence.TryRead(WinlogonXml("4"), "PC\\Worker", "S-1-5-21-123", 1, out _)
+    && !SessionActivityEvidence.TryRead(WinlogonXml("3"), "PC\\Worker", "S-1-5-21-123", 1, out _), "Winlogon lock and logoff notifications are not clock-in evidence");
+Check(!SessionActivityEvidence.TryRead(WinlogonXml("5", sid: "S-1-5-21-456"), "PC\\Worker", "S-1-5-21-123", 1, out _)
+    && !SessionActivityEvidence.TryRead(WinlogonXml("5", sid: ""), "PC\\Worker", "", 1, out _), "Winlogon notifications require the current account SID");
+Check(!SessionActivityEvidence.TryRead(WinlogonXml("5", subscriber: "TermSrv"), "PC\\Worker", "S-1-5-21-123", 1, out _),
+    "only one Winlogon subscriber is counted per notification");
 Check(!SessionActivityEvidence.TryRead("invalid XML", "PC\\Worker", "sid", 1, out _), "malformed session history is ignored");
 TimeInputTests.Run();
 ShiftTimeEditorTests.Run();

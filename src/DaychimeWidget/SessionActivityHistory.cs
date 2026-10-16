@@ -22,14 +22,15 @@ internal static class SessionActivityHistory
         var result = new List<DateTimeOffset>();
         ReadLog("Microsoft-Windows-TerminalServices-LocalSessionManager/Operational", "EventID=21 or EventID=25");
         ReadLog("Security", "EventID=4801");
+        ReadLog("Microsoft-Windows-Winlogon/Operational", "EventID=811", " and *[EventData[Data[@Name='SubscriberName']='Sens']]");
         return result;
 
-        void ReadLog(string channel, string ids)
+        void ReadLog(string channel, string ids, string dataFilter = "")
         {
             try
             {
                 var query = new EventLogQuery(channel, PathType.LogName,
-                    $"*[System[({ids}) and TimeCreated[@SystemTime >= '{fromUtc}' and @SystemTime <= '{toUtc}']]]") {
+                    $"*[System[({ids}) and TimeCreated[@SystemTime >= '{fromUtc}' and @SystemTime <= '{toUtc}']]]{dataFilter}") {
                     ReverseDirection = false
                 };
                 using var reader = new EventLogReader(query);

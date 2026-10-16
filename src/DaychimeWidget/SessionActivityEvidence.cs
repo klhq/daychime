@@ -28,6 +28,14 @@ internal static class SessionActivityEvidence
             matches |= provider == "Microsoft-Windows-Security-Auditing" && eventId == 4801
                 && Field("TargetUserSid") == sid
                 && Field("SessionId") == sessionId.ToString(CultureInfo.InvariantCulture);
+            // Winlogon logs one 811 per notification subscriber; Sens is always present.
+            // Event 2 is logon and 5 is unlock (undocumented, verified against live unlocks).
+            // Readable without elevation, but it carries only the SID, not the session ID.
+            matches |= provider == "Microsoft-Windows-Winlogon" && eventId == 811
+                && Field("SubscriberName") == "Sens"
+                && (Field("Event") == "2" || Field("Event") == "5")
+                && !string.IsNullOrEmpty(sid)
+                && (string?)system?.Element(ns + "Security")?.Attribute("UserID") == sid;
             return matches && DateTimeOffset.TryParse((string?)system?.Element(ns + "TimeCreated")?.Attribute("SystemTime"),
                 CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out time);
         }
