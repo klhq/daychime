@@ -37,6 +37,13 @@ function buildData(s, mode, language) {
   const f = (text, ...values) => text.replace(/\{(\d+)(?::(0+))?\}/g, (_, index, pad) => String(values[index]).padStart(pad ? pad.length : 0, '0'));
   const clock = (h, m) => f(s.time12, h, m, s.pm);
   const time = clock(12, '59');
+  // Same shape as Daychime.SetTimeChoices: 12-hour titles, two-digit 24-hour values.
+  const pad = n => String(n).padStart(2, '0');
+  const timeChoices = (prefix, hour, minute) => ({
+    hourChoices: [...Array(24).keys()].map(h => ({ title: f(s.hour12, h % 12 || 12, h < 12 ? s.am : s.pm), value: pad(h) })),
+    minuteChoices: [...Array(60).keys()].map(m => ({ title: pad(m), value: pad(m) })),
+    [prefix + 'Hour']: hour, [prefix + 'Minute']: minute
+  });
   const date = language === 0 ? 'Wed, Sep 30' : '9月30日 週三';
   const data = {
     view: 'main', showShift: false, isOvertime: false, date, now: f(s.nowLine, time),
@@ -74,9 +81,9 @@ function buildData(s, mode, language) {
     primary('clockIn', 'clockInShort', 'clockInLong');
   }
   if (mode.startsWith('edit')) {
-    const error = mode === 'edit-future' ? s.futureClockInShort : mode === 'edit-dst' ? s.invalidLocalTimeShort : f(s.invalidTimeShort, f(s.time12, 9, '30', s.am));
-    Object.assign(data, { view: 'edit', editHint: f(s.editHint, date, f(s.time12, 9, '30', s.am)), timePlaceholder: f(s.time12, 9, '30', s.am), editLabel: s.clockInTimeLabel, editLabelShort: f(s.editLabelShort, '9/30'),
-      clockInValue: { 'edit-error': '25:99', 'edit-future': clock(11, '59'), 'edit-dst': f(s.time12, 2, '30', s.am) }[mode] || time,
+    const error = mode === 'edit-future' ? s.futureClockInShort : mode === 'edit-dst' ? s.invalidLocalTimeShort : s.invalidTimeShort;
+    Object.assign(data, { view: 'edit', editHint: date, editLabel: s.clockInTimeLabel, editLabelShort: f(s.editLabelShort, '9/30'),
+      ...timeChoices('clockIn', ...({ 'edit-future': ['23', '59'], 'edit-dst': ['02', '30'] }[mode] || ['12', '59'])),
       save: s.saveShort, cancel: s.cancel, hasTimeError: mode !== 'edit', clockInTimeError: error, clearTitle: s.clearLink });
   } else if (mode === 'confirm-clear') {
     Object.assign(data, { view: 'confirmClear', confirmClear: s.confirmClear, confirmClearHint: s.confirmClearHint, clear: s.clear, cancel: s.cancel });
@@ -87,9 +94,7 @@ function buildData(s, mode, language) {
       timeFormatLabel: s.timeFormatLabel, timeFormatValue: 'system',
       timeFormatChoices: [['system', s.timeFormatSystem], ['12', s.timeFormat12], ['24', s.timeFormat24]].map(([value, title]) => ({ title, value })),
       autoToggleTitle: s.autoToggleTitle, autoValue: 'true', autoAfterLabel: s.autoAfterLabel,
-      autoAfterValue: mode === 'customize-error' ? '25:99' : f(s.time12, 6, '00', s.am), autoAfterPlaceholder: f(s.time12, 6, '00', s.am),
-      hasAutoTimeError: mode === 'customize-error',
-      invalidTimeShort: f(s.invalidTimeShort, f(s.time12, 6, '00', s.am)), autoClockInExplanation: f(s.autoClockInExplanation, clock(6, '00')), customizeSmallHint: s.customizeSmallHint,
+      ...timeChoices('autoAfter', '06', '00'), hasAutoTimeError: mode === 'customize-error', invalidTimeShort: s.invalidTimeShort, autoClockInExplanation: f(s.autoClockInExplanation, clock(6, '00')), customizeSmallHint: s.customizeSmallHint,
       done: s.done, cancel: s.cancel });
   }
   return data;
@@ -145,6 +150,30 @@ let layoutBrowser;
             if(el.classList.contains('ac-textBlock') && el.scrollWidth>el.clientWidth+1) clipped.push(`text:${el.textContent}:truncated`);
           }
           if(height>expected+0.5) clipped.push(`card:${height}>${expected}`);
+          // Text links (selectAction) must be tappable only around their text, not across the card.
+          for(const link of content.querySelectorAll('.ac-selectable:not(.ac-pushButton)')) {
+            // Measure the text glyphs: a range over whole elements would include the block-level TextBlock.
+            let left=Infinity, right=-Infinity;
+            const walker=document.createTreeWalker(link, NodeFilter.SHOW_TEXT);
+            for(let node=walker.nextNode(); node; node=walker.nextNode()) {
+              const range=document.createRange();
+              range.selectNodeContents(node);
+              const r=range.getBoundingClientRect();
+              if(r.width) { left=Math.min(left, r.left); right=Math.max(right, r.right); }
+            }
+            const textWidth=Math.max(0, right-left), width=link.getBoundingClientRect().width;
+            if(width>textWidth+24) errors.push(`Link "${link.textContent}" is ${Math.round(width)}px wide for ${Math.round(textWidth)}px of text`);
+          }
+          for(const field of content.querySelectorAll('input,select')) {
+            const a=field.getBoundingClientRect();
+            if(!a.width||!a.height) continue;
+            for(const button of content.querySelectorAll('button')) {
+              const b=button.getBoundingClientRect();
+              if(b.width && a.left<b.right-0.5 && b.left<a.right-0.5 && a.top<b.bottom-0.5 && b.top<a.bottom-0.5) clipped.push(`${field.type}:overlaps button ${button.textContent}`);
+              // Form buttons apply the whole form, so they sit below every field rather than beside one.
+              if(b.width && data.view!=='main' && b.top<a.bottom-0.5) errors.push(`Button ${button.textContent} is beside a field instead of below the form`);
+            }
+          }
           const mode=id.split('-').slice(3).join('-');
           if(data.view==='main') {
             const targets=content.querySelectorAll('.ac-pushButton, .ac-selectable:not(.ac-pushButton)').length;
@@ -159,27 +188,32 @@ let layoutBrowser;
           if(mode==='working-timezone' && size!=='small' && !content.textContent.includes(data.timezoneAdjustedNote)) errors.push('Timezone adjustment note is not displayed');
           if(mode.startsWith('edit') && !content.textContent.includes(size==='small' ? (data.hasTimeError ? data.clockInTimeError : data.editLabelShort) : data.editHint)) errors.push('Edit form does not identify the shift date');
           if(mode.startsWith('edit-') && !content.textContent.includes(data.clockInTimeError)) errors.push('Edit form does not display the specific time error');
-          const form = mode==='edit' ? {save:'saveTime', cancel:'cancelEdit', input:'clockIn'}
-            : mode==='customize' && size!=='small' ? {save:'saveCustomization', cancel:'cancelCustomization', input:'autoClockInAfter'} : null;
+          if(mode==='customize-error' && size!=='small' && !content.textContent.includes(data.invalidTimeShort)) errors.push('Customization does not display the time error');
+          const form = mode==='edit' ? {save:'saveTime', cancel:'cancelEdit', input:'clockIn', data:'clockIn'}
+            : mode==='customize' && size!=='small' ? {save:'saveCustomization', cancel:'cancelCustomization', input:'autoClockInAfter', data:'autoAfter'} : null;
           if(form) {
-            const input=content.querySelector('input[type="text"]');
-            if(input.maxLength>0) errors.push('A character limit can silently truncate pasted times');
-            const press=title=>[...content.querySelectorAll('button')].find(b=>b.textContent===title)?.click();
-            input.value='07:45';
-            window.lastLayoutAction=null;
-            press(form.save==='saveTime' ? data.save : data.done);
-            if(window.lastLayoutAction?.verb!==form.save || window.lastLayoutAction.data?.[form.input]!=='07:45')
-              errors.push('Save did not submit the edited time: '+JSON.stringify(window.lastLayoutAction));
-            input.value=' ０９３０ ';
-            press(form.save==='saveTime' ? data.save : data.done);
-            if(window.lastLayoutAction?.data?.[form.input]!==' ０９３０ ') errors.push('Save did not preserve the full pasted value for server-side parsing');
-            if(form.save==='saveCustomization') {
+            // Times are hour and minute drop-downs, so their titles can follow the card's 12/24-hour setting.
+            const selects=[...content.querySelectorAll('select')];
+            // Compact choice sets add an empty placeholder option.
+            const count=x=>[...x.options].filter(o=>o.value).length;
+            const hour=selects.find(x=>count(x)===24), minute=selects.find(x=>count(x)===60);
+            if(content.querySelector('input:not([type="checkbox"])')) errors.push('A time field is free text or a system time picker');
+            if(!hour || !minute) errors.push('Time is not an hour and minute drop-down');
+            else {
+              const shown=hour.selectedOptions[0]?.textContent, expectedHour=data.hourChoices.find(c=>c.value===data[form.data+'Hour']).title;
+              if(shown!==expectedHour || minute.value!==data[form.data+'Minute']) errors.push(`Drop-downs show ${shown}:${minute.value}, expected ${expectedHour}:${data[form.data+'Minute']}`);
+              const press=title=>[...content.querySelectorAll('button')].find(b=>b.textContent===title)?.click();
+              hour.value='07'; minute.value='45';
+              window.lastLayoutAction=null;
+              press(form.save==='saveTime' ? data.save : data.done);
               const sent=window.lastLayoutAction?.data||{};
-              if(sent.workHours!=='9.5' || sent.timeFormat!=='system' || sent.autoClockIn!=='true') errors.push('Customization did not submit every setting: '+JSON.stringify(sent));
+              if(window.lastLayoutAction?.verb!==form.save || sent[form.input+'Hour']!=='07' || sent[form.input+'Minute']!=='45')
+                errors.push('Save did not submit the edited time: '+JSON.stringify(window.lastLayoutAction));
+              if(form.save==='saveCustomization' && (sent.workHours!=='9.5' || sent.timeFormat!=='system' || sent.autoClockIn!=='true'))
+                errors.push('Customization did not submit every setting: '+JSON.stringify(sent));
+              press(data.cancel);
+              if(window.lastLayoutAction?.verb!==form.cancel) errors.push('Cancel did not invoke its action');
             }
-            input.value='25:99';
-            press(data.cancel);
-            if(window.lastLayoutAction?.verb!==form.cancel) errors.push('Cancel did not invoke its action');
           }
           return {height,errors,clipped};
         }, {template,data,size,host,id,theme,maxTargets:maxTouchTargets});

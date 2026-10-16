@@ -53,6 +53,26 @@ internal static class TimeInput
         return string.Format(CultureInfo.InvariantCulture, pattern12, hour, time.Minute, time.Hour < 12 ? am : pm);
     }
 
+    // The hour and minute drop-downs submit two-digit 24-hour values (00-23, 00-59).
+    internal static bool TryParseParts(string? hour, string? minute, out TimeOnly time)
+    {
+        time = default;
+        if (hour is not { Length: 2 } || minute is not { Length: 2 }
+            || !int.TryParse(hour, NumberStyles.None, CultureInfo.InvariantCulture, out var hourValue)
+            || !int.TryParse(minute, NumberStyles.None, CultureInfo.InvariantCulture, out var minuteValue)
+            || hourValue > 23 || minuteValue > 59) return false;
+        time = new TimeOnly(hourValue, minuteValue);
+        return true;
+    }
+
+    // Hour drop-down title in the card's time format: 09, or with pattern12 receiving
+    // {0} hour (1-12) and {1} the AM/PM designator, 9 AM / 上午 9.
+    internal static string FormatHour(int hour, bool use24Hour, string pattern12, string am, string pm)
+    {
+        if (use24Hour) return hour.ToString("00", CultureInfo.InvariantCulture);
+        return string.Format(CultureInfo.InvariantCulture, pattern12, hour % 12 == 0 ? 12 : hour % 12, hour < 12 ? am : pm);
+    }
+
     // H:mm, HH:mm, HHmm, and with allowBareHour also H or HH. ASCII digits only.
     private static bool TryParseClock(string text, bool allowBareHour, out int hour, out int minute)
     {
