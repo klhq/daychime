@@ -1,3 +1,20 @@
 {
-  "clockInLabel": "上班打卡", "finishLabel": "預計下班", "finishedAtLabel": "下班時間", "workdayComplete": "已過預計下班時間，離開時請打卡", "clockInNow": "現在打卡", "startNewWorkday": "開始新的工作日", "clockOutNow": "現在下班打卡", "undoClockOut": "撤銷下班打卡", "previousClockedOutSummary": "上一班：{0} → {1} · 經過 {2}", "elapsedHoursMinutes": "{0} 小時 {1} 分", "previousUnrecordedSummary": "上一班：{0} · 未記錄下班（預計 {1}）", "endsTomorrow": "隔天下班", "editTime": "修改上班時間", "clockInTimeLabel": "上班時間", "invalidTime": "請輸入有效時間，例如 09:00。", "saveChanges": "儲存變更", "clear": "清除", "clearLink": "清除這個班次", "timezoneAdjustedNote": "上班時間已依目前時區調整。", "confirmClear": "要清除這個班次嗎？", "cancel": "取消", "workHoursSummary": "{0} 小時工作制", "workHoursToggleTitle": "設定工作時數為 {0} 小時", "notClockedInYet": "尚未打卡", "clockInHint": "現在打卡即可計算預計下班時間。", "nowLabel": "現在", "cancelEdit": "取消修改", "switchTo12Hour": "切換為 12 小時制", "switchTo24Hour": "切換為 24 小時制", "autoClockInOnLabel": "解鎖自動打卡：開啟", "autoClockInOffLabel": "自動打卡：關閉", "autoClockInAfterLabel": "{0} 後首次解鎖時自動打卡", "autoClockInSettingsTitle": "自動打卡", "autoClockInAfterTitle": "最早自動打卡時間", "autoClockInExplanation": "首次在指定時間後解鎖時自動打卡；若 Daychime 當時未執行，開啟小工具時以開啟時間打卡。", "configureAutoClockIn": "設定自動打卡", "saveAutoClockIn": "儲存自動打卡設定", "turnOffAutoClockIn": "關閉自動打卡", "turnOnAutoClockIn": "開啟自動打卡", "finishNotificationTitle": "上班打卡", "finishNotificationBody": "預計下班時間 {0} 已到。"
+  "more": "更多",
+  "done": "完成",
+  "editShort": "修改",
+  "saveShort": "儲存",
+  "newShiftShort": "新班次",
+  "clockInTimeCompactLabel": "{0} · 24h",
+  "futureClockInShort": "上班時間不能晚於現在。",
+  "invalidLocalTimeShort": "此日期沒有這個當地時間。",
+  "autoAfterCompactLabel": "最早 · 24h",
+  "invalidTimeShort": "請輸入 09:30 或 0930。",
+  "autoClockInMissingShort": "請補記上班時間",
+  "workdayCompleteShort": "可下班打卡",
+  "previousCompact": "上一班：{0} → {1}",
+  "previousMissingCompact": "上一班未記錄下班",
+  "autoClockInOnCompact": "自動 {0}",
+  "autoClockInOffCompact": "自動關閉",
+  "autoClockInMissing": "找不到這個工作日的登入或解鎖紀錄。請先打卡，再修正實際上班時間。",
+  "clockInLabel": "上班打卡", "finishLabel": "預計下班", "finishedAtLabel": "下班時間", "workdayComplete": "已過預計下班時間，離開時請打卡", "clockInNow": "現在打卡", "startNewWorkday": "開始新的工作日", "clockOutNow": "現在下班打卡", "undoClockOut": "撤銷下班打卡", "previousClockedOutSummary": "上一班：{0} → {1} · 經過 {2}", "elapsedHoursMinutes": "{0} 小時 {1} 分", "previousUnrecordedSummary": "上一班：{0} · 未記錄下班（預計 {1}）", "endsTomorrow": "隔天下班", "editTime": "修改上班時間", "clockInTimeLabel": "上班時間", "invalidTime": "請輸入 24 小時制時間，例如 09:30 或 0930。", "saveChanges": "儲存變更", "clear": "清除", "clearLink": "清除這個班次", "timezoneAdjustedNote": "上班時間已依目前時區調整。", "confirmClear": "要清除這個班次嗎？", "cancel": "取消", "workHoursSummary": "{0} 小時工作制", "workHoursToggleTitle": "設定工作時數為 {0} 小時", "notClockedInYet": "尚未打卡", "clockInHint": "現在打卡即可計算預計下班時間。", "nowLabel": "現在", "cancelEdit": "取消修改", "switchTo12Hour": "切換為 12 小時制", "switchTo24Hour": "切換為 24 小時制", "autoClockInOnLabel": "解鎖自動打卡：開啟", "autoClockInOffLabel": "自動打卡：關閉", "autoClockInAfterLabel": "{0} 後登入或解鎖時自動打卡", "autoClockInSettingsTitle": "自動打卡", "autoClockInAfterTitle": "最早自動打卡時間", "autoClockInExplanation": "記錄指定時間後首次 Windows 登入或解鎖。若 Daychime 較晚啟動，會從可讀取的紀錄補回；找不到紀錄時請手動補記上班時間。", "configureAutoClockIn": "設定自動打卡", "saveAutoClockIn": "儲存自動打卡設定", "turnOffAutoClockIn": "關閉自動打卡", "turnOnAutoClockIn": "開啟自動打卡", "finishNotificationTitle": "上班打卡", "finishNotificationBody": "預計下班時間 {0} 已到。"
 }

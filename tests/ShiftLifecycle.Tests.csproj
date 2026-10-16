@@ -6,6 +6,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="..\src\DaychimeWidget\ShiftTimeEditor.cs" Link="ShiftTimeEditor.cs" />
+    <Compile Include="..\src\DaychimeWidget\TimeInput.cs" Link="TimeInput.cs" />
+    <Compile Include="..\src\DaychimeWidget\SessionActivityEvidence.cs" Link="SessionActivityEvidence.cs" />
     <Compile Include="..\src\DaychimeWidget\ShiftLifecycle.cs" Link="ShiftLifecycle.cs" />
     <Compile Include="..\src\DaychimeWidget\ShiftStateCodec.cs" Link="ShiftStateCodec.cs" />
   </ItemGroup>

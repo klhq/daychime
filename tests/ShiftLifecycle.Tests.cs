@@ -58,4 +58,32 @@ Check(ShiftStateCodec.TryRead($"{At(28, 19):O};9;", out var legacy) && legacy?.S
 Check(ShiftStateCodec.TryRead(ShiftStateCodec.Serialize(legacy), out var migrated) && migrated == legacy, "legacy state migrates without changing the shift");
 Check(!ShiftStateCodec.TryRead($"{At(28, 19):O};9;;malformed", out _), "invalid persisted revision is rejected");
 Check(!ShiftStateCodec.TryRead($"{At(28, 19):O};NaN;", out _), "invalid persisted work hours are rejected");
-Console.WriteLine("All shift lifecycle scenarios passed.");
+var recoveryNow = At(29, 17).AddMinutes(31);
+var morning = At(29, 9).AddMinutes(6);
+Check(SessionActivityEvidence.FindStart(default, new[] { morning, At(29, 13) }, recoveryNow, dayStart, null) == morning,
+    "opening the board late recovers the first morning activity rather than the opening time");
+Check(SessionActivityEvidence.FindStart(default, Array.Empty<DateTimeOffset>(), recoveryNow, dayStart, null) is null,
+    "missing history cannot fabricate an afternoon clock-in");
+Check(SessionActivityEvidence.FindStart(default, new[] { At(28, 9), recoveryNow.AddMinutes(1) }, recoveryNow, dayStart, null) is null,
+    "previous-cycle and future activity cannot become today's clock-in");
+Check(SessionActivityEvidence.FindStart(default, new[] { morning }, recoveryNow, dayStart, At(29, 10)) is null,
+    "enabling auto clock-in midday does not backfill earlier activity");
+var handled = ShiftLifecycle.Start(default, morning, 9, dayStart);
+Check(SessionActivityEvidence.FindStart(handled, new[] { morning, recoveryNow }, recoveryNow, dayStart, null) is null,
+    "session recovery cannot overwrite a handled work cycle");
+Check(SessionActivityEvidence.FindStart(night, new[] { At(29, 1) }, At(29, 3), nightStart, null) is null,
+    "a live overnight shift cannot be replaced by recovered activity");
+Check(SessionActivityEvidence.FindStart(default, new[] { At(28, 19) }, At(29, 2), nightStart, null) == At(28, 19),
+    "opening after midnight can recover the current night-shift cycle");
+var eventXml = "<Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-TerminalServices-LocalSessionManager'/><EventID>21</EventID><TimeCreated SystemTime='2026-10-15T01:06:47Z'/></System><UserData><EventXML xmlns='Event_NS'><User>PC\\Worker</User><SessionID>1</SessionID></EventXML></UserData></Event>";
+Check(SessionActivityEvidence.TryRead(eventXml, "PC\\Worker", "S-1-5-21-123", 1, out var logonTime)
+    && logonTime == DateTimeOffset.Parse("2026-10-15T01:06:47Z"), "session logon parser preserves the actual timestamp");
+Check(!SessionActivityEvidence.TryRead(eventXml, "PC\\Other", "S-1-5-21-123", 1, out _)
+    && !SessionActivityEvidence.TryRead(eventXml, "PC\\Worker", "S-1-5-21-123", 2, out _), "other users and other Windows sessions are excluded");
+var unlockXml = "<Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Security-Auditing'/><EventID>4801</EventID><TimeCreated SystemTime='2026-10-15T01:07:00Z'/></System><EventData><Data Name='TargetUserSid'>S-1-5-21-123</Data><Data Name='SessionId'>1</Data></EventData></Event>";
+Check(SessionActivityEvidence.TryRead(unlockXml, "PC\\Worker", "S-1-5-21-123", 1, out _)
+    && !SessionActivityEvidence.TryRead(unlockXml, "PC\\Worker", "S-1-5-21-456", 1, out _), "unlock parser requires the correct account SID");
+Check(!SessionActivityEvidence.TryRead("invalid XML", "PC\\Worker", "sid", 1, out _), "malformed session history is ignored");
+TimeInputTests.Run();
+ShiftTimeEditorTests.Run();
+Console.WriteLine("All shift lifecycle and time-input scenarios passed.");

@@ -20,10 +20,16 @@ internal sealed class Daychime : WidgetImplBase
     private const string EditingErrorPrefix = "editing-error|";
     private const string ConfirmClearPrefix = "confirm-clear|";
     private const string AutoSettingsPrefix = "auto-settings|";
+    private const string AutoSettingsErrorPrefix = "auto-settings-error|";
+    private const string OptionsPrefix = "options|";
     private const string AutoClockInEnabledKey = "AutoClockInOnUnlock";
     private const string AutoClockInAfterKey = "AutoClockInAfter";
+    private const string AutoClockInEnabledSinceKey = "AutoClockInEnabledSince";
     private const string LastAutoClockInCycleKey = "LastAutoClockInCycle";
     private static readonly double[] WorkHoursPresets = ShiftLifecycle.WorkHoursPresets;
+    private string invalidClockInValue;
+    private ShiftTimeEditError clockInEditError;
+    private string invalidAutoClockInValue;
 
     public Daychime(string widgetId, string startingState) : base(widgetId, startingState) { }
 
@@ -45,10 +51,12 @@ internal sealed class Daychime : WidgetImplBase
                 if (ReadSnapshot().Current is not null && !State.StartsWith(EditingPrefix, StringComparison.Ordinal))
                     state = EditingPrefix + GetBaseState(State);
                 break;
-            case "cancelEdit": state = State.StartsWith(EditingPrefix, StringComparison.Ordinal) ? GetBaseState(State) : State; break;
+            case "cancelEdit": state = GetBaseState(State); break;
+            case "showOptions": state = OptionsPrefix + GetBaseState(State); break;
+            case "closeOptions": state = GetBaseState(State); break;
             case "toggleTimeFormat": ToggleUse24Hour(); break;
             case "configureAutoClockIn": state = AutoSettingsPrefix + GetBaseState(State); break;
-            case "cancelAutoClockIn": state = State.StartsWith(AutoSettingsPrefix, StringComparison.Ordinal) ? GetBaseState(State) : State; break;
+            case "cancelAutoClockIn": state = GetBaseState(State); break;
             case "turnOffAutoClockIn": TurnOffAutoClockIn(); break;
             case "saveAutoClockIn": SaveAutoClockInSettings(args.Data); break;
             case "cycleWorkHours": CycleWorkHours(); break;
@@ -73,7 +81,10 @@ internal sealed class Daychime : WidgetImplBase
         var confirmingClear = State.StartsWith(ConfirmClearPrefix, StringComparison.Ordinal);
         var isEditing = State.StartsWith(EditingPrefix, StringComparison.Ordinal) || State.StartsWith(EditingErrorPrefix, StringComparison.Ordinal);
         var hasTimeError = State.StartsWith(EditingErrorPrefix, StringComparison.Ordinal);
-        var isAutoSettings = State.StartsWith(AutoSettingsPrefix, StringComparison.Ordinal);
+        var hasAutoTimeError = State.StartsWith(AutoSettingsErrorPrefix, StringComparison.Ordinal);
+        var isAutoSettings = State.StartsWith(AutoSettingsPrefix, StringComparison.Ordinal) || hasAutoTimeError;
+        var isOptions = State.StartsWith(OptionsPrefix, StringComparison.Ordinal);
+        var showMain = !isEditing && !confirmingClear && !isAutoSettings && !isOptions;
         var clockedIn = snapshot.Current.HasValue;
         var shift = snapshot.Current.GetValueOrDefault();
         var start = clockedIn ? shift.Start.ToLocalTime() : default;
@@ -92,10 +103,38 @@ internal sealed class Daychime : WidgetImplBase
             ["isEditing"] = clockedIn && isEditing,
             ["hasTimeError"] = clockedIn && hasTimeError,
             ["isAutoSettings"] = isAutoSettings,
+            ["hasAutoTimeError"] = hasAutoTimeError,
+            ["isOptions"] = isOptions,
+            ["showMain"] = showMain,
+            ["hasUndoableShift"] = !clockedIn && snapshot.Previous is Shift { ClockOut: not null },
+            ["finishCompact"] = clockedIn ? finish.ToString(timeFormat, CultureInfo.CurrentCulture) + (finish.Date > start.Date ? " +1" : "") : "--:--",
+            ["finishCaption"] = GetString(strings, isWorkdayComplete ? "workdayCompleteShort" : "finishLabel"),
+            ["workHoursCompact"] = FormatHours(workHours) + "h",
+            ["previousShiftCompact"] = snapshot.Previous is Shift previous
+                ? previous.ClockOut is DateTimeOffset actual
+                    ? string.Format(CultureInfo.CurrentCulture, GetString(strings, "previousCompact"), previous.Start.ToLocalTime().ToString(timeFormat, CultureInfo.CurrentCulture), actual.ToLocalTime().ToString(timeFormat, CultureInfo.CurrentCulture))
+                    : GetString(strings, "previousMissingCompact")
+                : "",
+            ["autoClockInCompact"] = GetAutoClockInOnUnlock() ? string.Format(CultureInfo.CurrentCulture, GetString(strings, "autoClockInOnCompact"), autoClockInAfter.ToString("HH:mm", CultureInfo.InvariantCulture)) : GetString(strings, "autoClockInOffCompact"),
+            ["more"] = GetString(strings, "more"),
+            ["done"] = GetString(strings, "done"),
+            ["editShort"] = GetString(strings, "editShort"),
+            ["saveShort"] = GetString(strings, "saveShort"),
+            ["newShiftShort"] = GetString(strings, "newShiftShort"),
+            ["clockInTimeCompactLabel"] = string.Format(CultureInfo.CurrentCulture, GetString(strings, "clockInTimeCompactLabel"), clockedIn ? start.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : ""),
+            ["clockInTimeError"] = GetString(strings, clockInEditError switch {
+                ShiftTimeEditError.Future => "futureClockInShort",
+                ShiftTimeEditError.InvalidLocalTime => "invalidLocalTimeShort",
+                _ => "invalidTimeShort"
+            }),
+            ["autoAfterCompactLabel"] = GetString(strings, "autoAfterCompactLabel"),
+            ["invalidTimeShort"] = GetString(strings, "invalidTimeShort"),
+            ["autoClockInMissingShort"] = GetString(strings, "autoClockInMissingShort"),
+            ["workdayCompleteShort"] = GetString(strings, "workdayCompleteShort"),
             ["confirmingClear"] = confirmingClear,
-            ["showFormatToggle"] = !isEditing && !confirmingClear && !isAutoSettings,
+            ["showFormatToggle"] = showMain,
             ["clockIn"] = clockedIn ? start.ToString(timeFormat, CultureInfo.CurrentCulture) : "--:--",
-            ["clockInValue"] = clockedIn ? start.ToString("HH:mm", CultureInfo.InvariantCulture) : "",
+            ["clockInValue"] = hasTimeError && invalidClockInValue is not null ? invalidClockInValue : clockedIn ? start.ToString("HH:mm", CultureInfo.InvariantCulture) : "",
             ["finish"] = clockedIn ? finish.ToString(timeFormat, CultureInfo.CurrentCulture) : "--:--",
             ["endsNextDay"] = clockedIn && finish.Date > start.Date,
             ["isWorkdayComplete"] = isWorkdayComplete,
@@ -108,11 +147,16 @@ internal sealed class Daychime : WidgetImplBase
             ["formatBadge"] = use24Hour ? "24h" : "12h",
             ["formatToggleTitle"] = use24Hour ? GetString(strings, "switchTo12Hour") : GetString(strings, "switchTo24Hour"),
             ["autoClockInEnabled"] = GetAutoClockInOnUnlock(),
-            ["autoClockInAfter"] = autoClockInAfter.ToString("HH:mm", CultureInfo.InvariantCulture),
+            ["autoClockInAfter"] = hasAutoTimeError && invalidAutoClockInValue is not null ? invalidAutoClockInValue : autoClockInAfter.ToString("HH:mm", CultureInfo.InvariantCulture),
             ["autoClockInStatus"] = GetAutoClockInOnUnlock() ? string.Format(CultureInfo.CurrentCulture, GetString(strings, "autoClockInAfterLabel"), autoClockInAfter.ToString(timeFormat, CultureInfo.CurrentCulture)) : GetString(strings, "autoClockInOffLabel"),
             ["autoClockInSettingsTitle"] = GetString(strings, "autoClockInSettingsTitle"),
             ["autoClockInAfterTitle"] = GetString(strings, "autoClockInAfterTitle"),
             ["autoClockInExplanation"] = GetString(strings, "autoClockInExplanation"),
+            ["autoClockInMissing"] = GetString(strings, "autoClockInMissing"),
+            ["needsAutoClockInTime"] = GetAutoClockInOnUnlock() && !isEditing && !isAutoSettings && !confirmingClear
+                && snapshot.LastCycle != ShiftLifecycle.GetCycle(now, autoClockInAfter)
+                && TimeOnly.FromDateTime(now.LocalDateTime) >= autoClockInAfter
+                && (!clockedIn || finish <= now),
             ["autoClockInToggleTitle"] = GetString(strings, "configureAutoClockIn"),
             ["autoClockInPrimaryAction"] = GetString(strings, GetAutoClockInOnUnlock() ? "saveChanges" : "turnOnAutoClockIn"),
             ["turnOffAutoClockIn"] = GetString(strings, "turnOffAutoClockIn"),
@@ -121,6 +165,7 @@ internal sealed class Daychime : WidgetImplBase
             ["workdayComplete"] = GetString(strings, "workdayComplete"),
             ["endsTomorrow"] = GetString(strings, "endsTomorrow"),
             ["clockInActionTitle"] = GetString(strings, isWorkdayComplete ? "startNewWorkday" : "clockInNow"),
+            ["clockInNow"] = GetString(strings, "clockInNow"),
             ["clockOutActionTitle"] = GetString(strings, "clockOutNow"),
             ["undoClockOutActionTitle"] = GetString(strings, "undoClockOut"),
             ["editTime"] = GetString(strings, "editTime"),
@@ -141,11 +186,11 @@ internal sealed class Daychime : WidgetImplBase
         }.ToJsonString();
     }
 
-    public override void OnSessionUnlock() => TryAutoClockIn();
+    public override void OnSessionUnlock() => TryAutoClockIn(observedUnlock: true);
 
     public override void OnWidgetOpened()
     {
-        TryAutoClockIn();
+        TryAutoClockIn(observedUnlock: false);
         TryUpdateFinishReminder();
     }
 
@@ -168,12 +213,11 @@ internal sealed class Daychime : WidgetImplBase
         catch (Exception ex) { ProviderDiagnostics.Write($"Finish reminder cancellation failed: {ex}"); }
     }
 
-    private void TryAutoClockIn()
+    private void TryAutoClockIn(bool observedUnlock)
     {
         if (!GetAutoClockInOnUnlock()) return;
         var now = GetCurrentTime();
         var earliest = GetAutoClockInAfter();
-        if (TimeOnly.FromDateTime(now.LocalDateTime) < earliest) return;
         var cycle = ShiftLifecycle.GetCycle(now, earliest);
         var snapshot = ReadSnapshot();
         if (snapshot.LastCycle == cycle)
@@ -181,19 +225,33 @@ internal sealed class Daychime : WidgetImplBase
             ProviderDiagnostics.Write($"Auto clock-in skipped for {Id}: cycle {cycle} already handled.");
             return;
         }
-        if (!ShiftLifecycle.CanAutoClockIn(snapshot, now, earliest))
+        if (snapshot.Current is Shift active && active.Finish > now)
         {
             ProviderDiagnostics.Write($"Auto clock-in deferred for {Id}: current shift is still active.");
             return;
         }
-        StartShift(now);
-        ProviderDiagnostics.Write($"Auto clock-in recorded for {Id} at {now:O} (cycle {cycle}).");
+        // Opening the board is not evidence of when work began. Recover an actual
+        // logon/unlock first; only a live unlock callback may contribute 'now'.
+        var activity = SessionActivityHistory.Read(now, earliest);
+        if (observedUnlock) activity.Add(now);
+        DateTimeOffset? enabledSince = null;
+        if (ApplicationData.Current.LocalSettings.Values[AutoClockInEnabledSinceKey] is string since
+            && DateTimeOffset.TryParse(since, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var enabled)) enabledSince = enabled;
+        var startedAt = SessionActivityEvidence.FindStart(snapshot, activity, now, earliest, enabledSince);
+        if (startedAt is null)
+        {
+            ProviderDiagnostics.Write($"Auto clock-in needs a recorded logon/unlock for {Id}; opening the board did not clock in.");
+            return;
+        }
+        StartShift(startedAt.Value);
+        ProviderDiagnostics.Write($"Auto clock-in recorded for {Id} at {startedAt:O} (cycle {cycle}; recovered session evidence: {!observedUnlock || startedAt != now}).");
         TryUpdateFinishReminder();
     }
 
     private void StartShift(DateTimeOffset startedAt)
     {
-        WriteSnapshot(ShiftLifecycle.Start(ReadSnapshot(), startedAt, GetDefaultWorkHours(), GetAutoClockInAfter()));
+        // Recovered session events are UTC; record the offset the user was actually in.
+        WriteSnapshot(ShiftLifecycle.Start(ReadSnapshot(), startedAt.ToLocalTime(), GetDefaultWorkHours(), GetAutoClockInAfter()));
     }
 
     private void ClockOut(DateTimeOffset clockedOutAt)
@@ -231,17 +289,24 @@ internal sealed class Daychime : WidgetImplBase
 
     private void SaveClockInTime(string data)
     {
+        invalidClockInValue = null;
+        clockInEditError = ShiftTimeEditError.None;
         try
         {
             using var document = JsonDocument.Parse(data);
-            if (document.RootElement.TryGetProperty("clockIn", out var time) && TryParseClockIn(time.GetString(), out var parsed))
+            if (document.RootElement.TryGetProperty("clockIn", out var time)) invalidClockInValue = time.GetString();
+            if (TryParseClockIn(invalidClockInValue, out var parsed))
             {
                 var snapshot = ReadSnapshot();
                 if (snapshot.Current is not Shift existing) return;
-                var changedStart = GetMostRecentOccurrence(parsed, GetCurrentTime());
+                if (!ShiftTimeEditor.TryEdit(existing, parsed, GetCurrentTime(), TimeZoneInfo.Local, out var revised, out clockInEditError))
+                {
+                    state = EditingErrorPrefix + GetBaseState(State);
+                    return;
+                }
                 WriteSnapshot(snapshot with {
-                    Current = ShiftLifecycle.Revise(existing with { Start = changedStart }),
-                    LastCycle = ShiftLifecycle.GetCycle(changedStart, GetAutoClockInAfter())
+                    Current = revised,
+                    LastCycle = ShiftLifecycle.GetCycle(revised.Start, GetAutoClockInAfter())
                 });
                 return;
             }
@@ -252,16 +317,23 @@ internal sealed class Daychime : WidgetImplBase
 
     private void SaveAutoClockInSettings(string data)
     {
+        invalidAutoClockInValue = null;
         try
         {
             using var document = JsonDocument.Parse(data);
-            var after = GetAutoClockInAfter();
-            if (document.RootElement.TryGetProperty("autoClockInAfter", out var afterValue) && !TryParseClockIn(afterValue.GetString(), out after)) return;
+            if (document.RootElement.TryGetProperty("autoClockInAfter", out var afterValue)) invalidAutoClockInValue = afterValue.GetString();
+            if (!TryParseClockIn(invalidAutoClockInValue, out var after))
+            {
+                state = AutoSettingsErrorPrefix + GetBaseState(State);
+                return;
+            }
+            if (!GetAutoClockInOnUnlock())
+                ApplicationData.Current.LocalSettings.Values[AutoClockInEnabledSinceKey] = GetCurrentTime().ToString("O", CultureInfo.InvariantCulture);
             ApplicationData.Current.LocalSettings.Values[AutoClockInEnabledKey] = true;
             ApplicationData.Current.LocalSettings.Values[AutoClockInAfterKey] = after.ToString("HH:mm", CultureInfo.InvariantCulture);
             state = GetBaseState(State);
         }
-        catch (JsonException) { }
+        catch (JsonException) { state = AutoSettingsErrorPrefix + GetBaseState(State); }
     }
 
     private void TurnOffAutoClockIn()
@@ -272,12 +344,14 @@ internal sealed class Daychime : WidgetImplBase
 
     private void CycleWorkHours()
     {
+        var keepOptionsOpen = State.StartsWith(OptionsPrefix, StringComparison.Ordinal);
         var snapshot = ReadSnapshot();
         var current = snapshot.Current?.WorkHours ?? GetDefaultWorkHours();
         var next = WorkHoursPresets[(Array.IndexOf(WorkHoursPresets, current) + 1) % WorkHoursPresets.Length];
         ApplicationData.Current.LocalSettings.Values["WorkHours"] = next;
         if (snapshot.Current is Shift shift)
             WriteSnapshot(snapshot with { Current = ShiftLifecycle.Revise(shift with { WorkHours = next }) });
+        if (keepOptionsOpen) state = OptionsPrefix + GetBaseState(State);
     }
 
     private void UpdateWidget() => WidgetManager.GetDefault().UpdateWidget(new WidgetUpdateRequestOptions(Id) { Data = GetDataForWidget(), CustomState = State });
@@ -305,7 +379,7 @@ internal sealed class Daychime : WidgetImplBase
 
     private static string GetBaseState(string currentState)
     {
-        foreach (var prefix in new[] { ConfirmClearPrefix, EditingPrefix, EditingErrorPrefix, AutoSettingsPrefix })
+        foreach (var prefix in new[] { ConfirmClearPrefix, EditingPrefix, EditingErrorPrefix, AutoSettingsPrefix, AutoSettingsErrorPrefix, OptionsPrefix })
             if (currentState.StartsWith(prefix, StringComparison.Ordinal)) return currentState[prefix.Length..];
         return currentState;
     }
@@ -389,19 +463,7 @@ internal sealed class Daychime : WidgetImplBase
 
     private static string FormatHours(double hours) => hours.ToString("0.#", CultureInfo.InvariantCulture);
 
-    private static DateTimeOffset GetMostRecentOccurrence(TimeOnly time, DateTimeOffset now)
-    {
-        var localNow = now.LocalDateTime;
-        var candidate = localNow.Date.Add(time.ToTimeSpan());
-        if (candidate > localNow) candidate = candidate.AddDays(-1);
-        return new DateTimeOffset(candidate);
-    }
-
-    private static bool TryParseClockIn(string value, out TimeOnly parsed)
-    {
-        if (string.IsNullOrWhiteSpace(value)) { parsed = default; return false; }
-        return TimeOnly.TryParseExact(value, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out parsed) || TimeOnly.TryParse(value, CultureInfo.CurrentCulture, DateTimeStyles.None, out parsed);
-    }
+    private static bool TryParseClockIn(string value, out TimeOnly parsed) => TimeInput.TryParse(value, out parsed);
 
     private void UpdateFinishReminder()
     {

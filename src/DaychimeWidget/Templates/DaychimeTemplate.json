@@ -4,142 +4,778 @@
   "version": "1.5",
   "body": [
     {
-      "type": "Container", "$when": "${$host.widgetSize == 'small'}",
+      "type": "Container",
+      "$when": "${isAutoSettings}",
+      "spacing": "None",
       "items": [
-        { "type": "TextBlock", "text": "${date}", "weight": "Bolder", "size": "Small", "wrap": true },
-        { "type": "TextBlock", "$when": "${isWorkdayComplete}", "text": "✓ ${workdayComplete}", "weight": "Bolder", "color": "Good", "size": "Small", "spacing": "Small", "wrap": true },
         {
-          "type": "ColumnSet", "$when": "${showFormatToggle}", "spacing": "None",
+          "type": "ColumnSet",
+          "spacing": "None",
           "columns": [
-            { "type": "Column", "width": "stretch", "verticalContentAlignment": "Center", "items": [ { "type": "TextBlock", "text": "${nowLabel} ${now}", "isSubtle": true, "size": "Small", "wrap": false } ] },
-            { "type": "Column", "width": "auto", "verticalContentAlignment": "Center", "selectAction": { "type": "Action.Execute", "verb": "toggleTimeFormat", "title": "${formatToggleTitle}" },
-              "items": [ { "type": "TextBlock", "text": "${formatBadge}", "size": "Small", "weight": "Bolder", "color": "Accent", "wrap": false } ] }
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                {
+                  "type": "Input.Text",
+                  "id": "autoClockInAfter",
+                  "value": "${autoClockInAfter}",
+                  "label": "${autoAfterCompactLabel}",
+                  "placeholder": "09:30",
+                  "spacing": "None"
+                }
+              ]
+            },
+            {
+              "type": "Column",
+              "width": "auto",
+              "verticalContentAlignment": "Bottom",
+              "items": [
+                {
+                  "type": "ActionSet",
+                  "spacing": "None",
+                  "actions": [
+                    {
+                      "type": "Action.Execute",
+                      "verb": "saveAutoClockIn",
+                      "title": "${saveShort}",
+                      "style": "positive"
+                    },
+                    {
+                      "type": "Action.Execute",
+                      "verb": "cancelAutoClockIn",
+                      "title": "${cancel}",
+                      "associatedInputs": "none"
+                    }
+                  ]
+                }
+              ]
+            }
           ]
         },
-        { "type": "Container", "$when": "${showFormatToggle}", "spacing": "Small", "selectAction": { "type": "Action.Execute", "verb": "cycleWorkHours", "title": "${workHoursToggleTitle}" },
-          "items": [ { "type": "TextBlock", "text": "${workHoursSummary}", "size": "Small", "weight": "Bolder", "color": "Accent", "wrap": true } ] },
-        { "type": "TextBlock", "$when": "${canEdit}", "text": "${finishLabel}", "isSubtle": true, "spacing": "Medium" },
-        { "type": "TextBlock", "$when": "${canEdit}", "text": "${finish}", "size": "ExtraLarge", "weight": "Bolder", "spacing": "None" },
-        { "type": "TextBlock", "$when": "${endsNextDay}", "text": "${endsTomorrow}", "isSubtle": true, "size": "Small", "spacing": "None", "wrap": true },
-        { "type": "TextBlock", "$when": "${canEdit}", "text": "${clockInLabel} ${clockIn}", "isSubtle": true, "spacing": "Small" },
-        { "type": "TextBlock", "$when": "${timezoneChanged}", "text": "${timezoneAdjustedNote}", "isSubtle": true, "size": "Small", "wrap": true, "spacing": "Small" },
-        { "type": "Container", "$when": "${canEdit}", "spacing": "Small", "selectAction": { "type": "Action.Execute", "verb": "askClear", "title": "${clearLink}" },
-          "items": [ { "type": "TextBlock", "text": "${clearLink}", "size": "Small", "color": "Attention", "wrap": true } ] },
-        { "type": "TextBlock", "$when": "${hasPreviousShift}", "text": "${previousShiftSummary}", "isSubtle": true, "size": "Small", "wrap": true, "spacing": "Medium", "separator": true },
-        { "type": "TextBlock", "$when": "${!clockedIn}", "text": "${notClockedInYet}", "size": "Medium", "weight": "Bolder", "spacing": "Medium" },
-        { "type": "TextBlock", "$when": "${!clockedIn}", "text": "${clockInHint}", "isSubtle": true, "wrap": true, "spacing": "Small" },
-        { "type": "Container", "$when": "${!clockedIn && !isAutoSettings}", "spacing": "Small", "selectAction": { "type": "Action.Execute", "verb": "configureAutoClockIn", "title": "${autoClockInToggleTitle}" },
-          "items": [ { "type": "TextBlock", "text": "${autoClockInStatus}", "size": "Small", "color": "Accent", "wrap": true } ] },
-        { "type": "TextBlock", "$when": "${isAutoSettings}", "text": "${autoClockInSettingsTitle}", "weight": "Bolder", "spacing": "Medium", "separator": true, "wrap": true },
-        { "type": "TextBlock", "$when": "${isAutoSettings}", "text": "${autoClockInExplanation}", "isSubtle": true, "wrap": true, "spacing": "Small" },
-        { "type": "Input.Time", "$when": "${isAutoSettings}", "id": "autoClockInAfter", "label": "${autoClockInAfterTitle}", "value": "${autoClockInAfter}", "isRequired": true, "spacing": "Small" },
-        { "type": "Input.Time", "$when": "${isEditing && !use24Hour}", "id": "clockIn", "label": "${clockInTimeLabel}", "value": "${clockInValue}", "isRequired": true, "errorMessage": "${invalidTime}", "spacing": "Medium", "separator": true },
-        { "type": "Input.Text", "$when": "${isEditing && use24Hour}", "id": "clockIn", "label": "${clockInTimeLabel}", "placeholder": "09:00", "value": "${clockInValue}", "isRequired": true, "errorMessage": "${invalidTime}", "spacing": "Medium", "separator": true },
-        { "type": "TextBlock", "$when": "${hasTimeError}", "text": "${invalidTime}", "color": "Attention", "wrap": true, "spacing": "Small" },
-        { "type": "TextBlock", "$when": "${confirmingClear}", "text": "${confirmClear}", "weight": "Bolder", "wrap": true, "spacing": "Medium", "separator": true }
+        {
+          "type": "TextBlock",
+          "text": "${invalidTimeShort}",
+          "spacing": "None",
+          "wrap": true,
+          "$when": "${hasAutoTimeError}",
+          "size": "Small",
+          "color": "Attention",
+          "maxLines": 2
+        },
+        {
+          "type": "Container",
+          "$when": "${autoClockInEnabled && !hasAutoTimeError}",
+          "spacing": "Small",
+          "selectAction": {
+            "type": "Action.Execute",
+            "verb": "turnOffAutoClockIn",
+            "title": "${turnOffAutoClockIn}",
+            "associatedInputs": "none"
+          },
+          "items": [
+            {
+              "type": "TextBlock",
+              "text": "${turnOffAutoClockIn}",
+              "spacing": "None",
+              "wrap": false,
+              "size": "Small",
+              "color": "Accent"
+            }
+          ]
+        },
+        {
+          "type": "TextBlock",
+          "text": "${autoClockInExplanation}",
+          "spacing": "Small",
+          "wrap": true,
+          "$when": "${$host.widgetSize == 'large'}",
+          "size": "Small",
+          "isSubtle": true
+        }
       ]
     },
     {
-      "type": "Container", "$when": "${$host.widgetSize == 'medium'}",
+      "type": "Container",
+      "$when": "${isEditing}",
+      "spacing": "None",
       "items": [
-        { "type": "TextBlock", "text": "${date}", "weight": "Bolder", "size": "Medium", "wrap": true },
-        { "type": "TextBlock", "$when": "${isWorkdayComplete}", "text": "✓ ${workdayComplete}", "weight": "Bolder", "color": "Good", "size": "Small", "spacing": "Small", "wrap": true },
         {
-          "type": "ColumnSet", "$when": "${showFormatToggle}", "spacing": "None",
+          "type": "ColumnSet",
+          "spacing": "None",
           "columns": [
-            { "type": "Column", "width": "stretch", "verticalContentAlignment": "Center", "items": [ { "type": "TextBlock", "text": "${nowLabel} ${now}", "isSubtle": true, "wrap": false } ] },
-            { "type": "Column", "width": "auto", "verticalContentAlignment": "Center", "selectAction": { "type": "Action.Execute", "verb": "toggleTimeFormat", "title": "${formatToggleTitle}" },
-              "items": [ { "type": "TextBlock", "text": "${formatBadge}", "weight": "Bolder", "color": "Accent", "wrap": false } ] }
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                {
+                  "type": "Input.Text",
+                  "id": "clockIn",
+                  "value": "${clockInValue}",
+                  "label": "${clockInTimeCompactLabel}",
+                  "placeholder": "09:30",
+                  "spacing": "None"
+                }
+              ]
+            },
+            {
+              "type": "Column",
+              "width": "auto",
+              "verticalContentAlignment": "Bottom",
+              "items": [
+                {
+                  "type": "ActionSet",
+                  "spacing": "None",
+                  "actions": [
+                    {
+                      "type": "Action.Execute",
+                      "verb": "saveTime",
+                      "title": "${saveShort}",
+                      "style": "positive"
+                    },
+                    {
+                      "type": "Action.Execute",
+                      "verb": "cancelEdit",
+                      "title": "${cancel}",
+                      "associatedInputs": "none"
+                    }
+                  ]
+                }
+              ]
+            }
           ]
         },
-        { "type": "Container", "$when": "${showFormatToggle}", "spacing": "Small", "selectAction": { "type": "Action.Execute", "verb": "cycleWorkHours", "title": "${workHoursToggleTitle}" },
-          "items": [ { "type": "TextBlock", "text": "${workHoursSummary}", "size": "Small", "weight": "Bolder", "color": "Accent", "wrap": true } ] },
         {
-          "type": "ColumnSet", "$when": "${canEdit}", "spacing": "Medium", "separator": true,
-          "columns": [
-            { "type": "Column", "width": "stretch", "items": [ { "type": "TextBlock", "text": "${clockInLabel}", "isSubtle": true, "size": "Small" }, { "type": "TextBlock", "text": "${clockIn}", "size": "ExtraLarge", "weight": "Bolder", "spacing": "None" } ] },
-            { "type": "Column", "width": "stretch", "items": [ { "type": "TextBlock", "text": "${finishLabel}", "isSubtle": true, "size": "Small" }, { "type": "TextBlock", "text": "${finish}", "size": "ExtraLarge", "weight": "Bolder", "spacing": "None" }, { "type": "TextBlock", "$when": "${endsNextDay}", "text": "${endsTomorrow}", "isSubtle": true, "size": "Small", "spacing": "None", "wrap": true } ] }
-          ]
-        },
-        { "type": "TextBlock", "$when": "${timezoneChanged}", "text": "${timezoneAdjustedNote}", "isSubtle": true, "size": "Small", "wrap": true, "spacing": "Small" },
-        { "type": "Container", "$when": "${canEdit}", "spacing": "Small", "selectAction": { "type": "Action.Execute", "verb": "askClear", "title": "${clearLink}" },
-          "items": [ { "type": "TextBlock", "text": "${clearLink}", "size": "Small", "color": "Attention", "wrap": true } ] },
-        { "type": "TextBlock", "$when": "${hasPreviousShift}", "text": "${previousShiftSummary}", "isSubtle": true, "size": "Small", "wrap": true, "spacing": "Medium", "separator": true },
-        {
-          "type": "Container", "$when": "${!clockedIn}", "spacing": "Large", "separator": true,
-          "items": [
-            { "type": "TextBlock", "text": "${notClockedInYet}", "size": "Large", "weight": "Bolder" },
-            { "type": "TextBlock", "text": "${clockInHint}", "isSubtle": true, "wrap": true, "spacing": "Small" },
-            { "type": "Container", "$when": "${!isAutoSettings}", "spacing": "Small", "selectAction": { "type": "Action.Execute", "verb": "configureAutoClockIn", "title": "${autoClockInToggleTitle}" },
-              "items": [ { "type": "TextBlock", "text": "${autoClockInStatus}", "size": "Small", "color": "Accent", "wrap": true } ] }
-          ]
-        },
-        { "type": "TextBlock", "$when": "${isAutoSettings}", "text": "${autoClockInSettingsTitle}", "weight": "Bolder", "spacing": "Medium", "separator": true, "wrap": true },
-        { "type": "TextBlock", "$when": "${isAutoSettings}", "text": "${autoClockInExplanation}", "isSubtle": true, "wrap": true, "spacing": "Small" },
-        { "type": "Input.Time", "$when": "${isAutoSettings}", "id": "autoClockInAfter", "label": "${autoClockInAfterTitle}", "value": "${autoClockInAfter}", "isRequired": true, "spacing": "Small" },
-        { "type": "Input.Time", "$when": "${isEditing && !use24Hour}", "id": "clockIn", "label": "${clockInTimeLabel}", "value": "${clockInValue}", "isRequired": true, "errorMessage": "${invalidTime}", "spacing": "Medium", "separator": true },
-        { "type": "Input.Text", "$when": "${isEditing && use24Hour}", "id": "clockIn", "label": "${clockInTimeLabel}", "placeholder": "09:00", "value": "${clockInValue}", "isRequired": true, "errorMessage": "${invalidTime}", "spacing": "Medium", "separator": true },
-        { "type": "TextBlock", "$when": "${hasTimeError}", "text": "${invalidTime}", "color": "Attention", "wrap": true, "spacing": "Small" },
-        { "type": "TextBlock", "$when": "${confirmingClear}", "text": "${confirmClear}", "weight": "Bolder", "wrap": true, "spacing": "Medium", "separator": true }
+          "type": "TextBlock",
+          "text": "${clockInTimeError}",
+          "spacing": "None",
+          "wrap": true,
+          "$when": "${hasTimeError}",
+          "size": "Small",
+          "color": "Attention",
+          "maxLines": 2
+        }
       ]
     },
     {
-      "type": "Container", "$when": "${$host.widgetSize == 'large'}",
+      "type": "Container",
+      "$when": "${confirmingClear}",
+      "spacing": "None",
       "items": [
-        { "type": "TextBlock", "text": "${date}", "weight": "Bolder", "size": "Large", "wrap": true },
-        { "type": "TextBlock", "$when": "${isWorkdayComplete}", "text": "✓ ${workdayComplete}", "weight": "Bolder", "color": "Good", "size": "Small", "spacing": "Small", "wrap": true },
         {
-          "type": "ColumnSet", "$when": "${showFormatToggle}", "spacing": "None",
+          "type": "TextBlock",
+          "text": "${confirmClear}",
+          "spacing": "None",
+          "wrap": true,
+          "weight": "Bolder",
+          "maxLines": 2
+        },
+        {
+          "type": "ActionSet",
+          "spacing": "Small",
+          "actions": [
+            {
+              "type": "Action.Execute",
+              "verb": "clear",
+              "title": "${clear}",
+              "style": "destructive",
+              "associatedInputs": "none"
+            },
+            {
+              "type": "Action.Execute",
+              "verb": "cancelClear",
+              "title": "${cancel}",
+              "associatedInputs": "none"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Container",
+      "$when": "${isOptions}",
+      "spacing": "None",
+      "items": [
+        {
+          "type": "ColumnSet",
+          "spacing": "None",
           "columns": [
-            { "type": "Column", "width": "stretch", "verticalContentAlignment": "Center", "items": [ { "type": "TextBlock", "text": "${nowLabel} ${now}", "isSubtle": true, "wrap": false } ] },
-            { "type": "Column", "width": "auto", "verticalContentAlignment": "Center", "selectAction": { "type": "Action.Execute", "verb": "toggleTimeFormat", "title": "${formatToggleTitle}" },
-              "items": [ { "type": "TextBlock", "text": "${formatBadge}", "weight": "Bolder", "color": "Accent", "wrap": false } ] }
+            {
+              "type": "Column",
+              "width": "auto",
+              "verticalContentAlignment": "Center",
+              "selectAction": {
+                "type": "Action.Execute",
+                "verb": "cycleWorkHours",
+                "title": "${workHoursToggleTitle}",
+                "associatedInputs": "none"
+              },
+              "items": [
+                {
+                  "type": "TextBlock",
+                  "text": "${workHoursCompact}",
+                  "spacing": "None",
+                  "wrap": false,
+                  "size": "Small",
+                  "color": "Accent"
+                }
+              ]
+            },
+            {
+              "type": "Column",
+              "width": "auto",
+              "verticalContentAlignment": "Center",
+              "selectAction": {
+                "type": "Action.Execute",
+                "verb": "toggleTimeFormat",
+                "title": "${formatToggleTitle}",
+                "associatedInputs": "none"
+              },
+              "items": [
+                {
+                  "type": "TextBlock",
+                  "text": "${formatBadge}",
+                  "spacing": "None",
+                  "wrap": false,
+                  "size": "Small",
+                  "color": "Accent"
+                }
+              ]
+            },
+            {
+              "type": "Column",
+              "width": "auto",
+              "verticalContentAlignment": "Center",
+              "selectAction": {
+                "type": "Action.Execute",
+                "verb": "configureAutoClockIn",
+                "title": "${autoClockInToggleTitle}",
+                "associatedInputs": "none"
+              },
+              "items": [
+                {
+                  "type": "TextBlock",
+                  "text": "${autoClockInCompact}",
+                  "spacing": "None",
+                  "wrap": false,
+                  "size": "Small",
+                  "color": "Accent"
+                }
+              ]
+            }
           ]
         },
-        { "type": "Container", "$when": "${showFormatToggle}", "spacing": "Small", "selectAction": { "type": "Action.Execute", "verb": "cycleWorkHours", "title": "${workHoursToggleTitle}" },
-          "items": [ { "type": "TextBlock", "text": "${workHoursSummary}", "weight": "Bolder", "color": "Accent", "wrap": true } ] },
         {
-          "type": "ColumnSet", "$when": "${canEdit}", "spacing": "Large", "separator": true,
+          "type": "ColumnSet",
+          "spacing": "Small",
           "columns": [
-            { "type": "Column", "width": "stretch", "items": [ { "type": "TextBlock", "text": "${clockInLabel}", "isSubtle": true }, { "type": "TextBlock", "text": "${clockIn}", "size": "ExtraLarge", "weight": "Bolder", "spacing": "None" } ] },
-            { "type": "Column", "width": "stretch", "items": [ { "type": "TextBlock", "text": "${finishLabel}", "isSubtle": true }, { "type": "TextBlock", "text": "${finish}", "size": "ExtraLarge", "weight": "Bolder", "spacing": "None" }, { "type": "TextBlock", "$when": "${endsNextDay}", "text": "${endsTomorrow}", "isSubtle": true, "size": "Small", "spacing": "None", "wrap": true } ] }
+            {
+              "type": "Column",
+              "width": "auto",
+              "verticalContentAlignment": "Center",
+              "selectAction": {
+                "type": "Action.Execute",
+                "verb": "edit",
+                "title": "${editTime}",
+                "associatedInputs": "none"
+              },
+              "items": [
+                {
+                  "type": "TextBlock",
+                  "text": "${editShort}",
+                  "spacing": "None",
+                  "wrap": false,
+                  "size": "Small",
+                  "color": "Accent"
+                }
+              ],
+              "$when": "${clockedIn}"
+            },
+            {
+              "type": "Column",
+              "width": "auto",
+              "verticalContentAlignment": "Center",
+              "selectAction": {
+                "type": "Action.Execute",
+                "verb": "askClear",
+                "title": "${clearLink}",
+                "associatedInputs": "none"
+              },
+              "items": [
+                {
+                  "type": "TextBlock",
+                  "text": "${clear}",
+                  "spacing": "None",
+                  "wrap": false,
+                  "size": "Small",
+                  "color": "Accent"
+                }
+              ],
+              "$when": "${clockedIn}"
+            },
+            {
+              "type": "Column",
+              "width": "auto",
+              "verticalContentAlignment": "Center",
+              "selectAction": {
+                "type": "Action.Execute",
+                "verb": "clockIn",
+                "title": "${clockInActionTitle}",
+                "associatedInputs": "none"
+              },
+              "items": [
+                {
+                  "type": "TextBlock",
+                  "text": "${newShiftShort}",
+                  "spacing": "None",
+                  "wrap": false,
+                  "size": "Small",
+                  "color": "Accent"
+                }
+              ],
+              "$when": "${clockedIn && isWorkdayComplete}"
+            },
+            {
+              "type": "Column",
+              "width": "auto",
+              "verticalContentAlignment": "Center",
+              "selectAction": {
+                "type": "Action.Execute",
+                "verb": "undoClockOut",
+                "title": "${undoClockOutActionTitle}",
+                "associatedInputs": "none"
+              },
+              "items": [
+                {
+                  "type": "TextBlock",
+                  "text": "${undoClockOutActionTitle}",
+                  "spacing": "None",
+                  "wrap": false,
+                  "size": "Small",
+                  "color": "Accent"
+                }
+              ],
+              "$when": "${hasUndoableShift}"
+            }
           ]
         },
-        { "type": "TextBlock", "$when": "${timezoneChanged}", "text": "${timezoneAdjustedNote}", "isSubtle": true, "size": "Small", "wrap": true, "spacing": "Small" },
-        { "type": "Container", "$when": "${canEdit}", "spacing": "Small", "selectAction": { "type": "Action.Execute", "verb": "askClear", "title": "${clearLink}" },
-          "items": [ { "type": "TextBlock", "text": "${clearLink}", "size": "Small", "color": "Attention", "wrap": true } ] },
-        { "type": "TextBlock", "$when": "${hasPreviousShift}", "text": "${previousShiftSummary}", "isSubtle": true, "size": "Small", "wrap": true, "spacing": "Medium", "separator": true },
         {
-          "type": "Container", "$when": "${!clockedIn}", "spacing": "ExtraLarge", "separator": true,
-          "items": [
-            { "type": "TextBlock", "text": "${notClockedInYet}", "size": "ExtraLarge", "weight": "Bolder" },
-            { "type": "TextBlock", "text": "${clockInHint}", "isSubtle": true, "wrap": true, "spacing": "Small" },
-            { "type": "Container", "$when": "${!isAutoSettings}", "spacing": "Small", "selectAction": { "type": "Action.Execute", "verb": "configureAutoClockIn", "title": "${autoClockInToggleTitle}" },
-              "items": [ { "type": "TextBlock", "text": "${autoClockInStatus}", "color": "Accent", "wrap": true } ] }
+          "type": "ActionSet",
+          "spacing": "Small",
+          "actions": [
+            {
+              "type": "Action.Execute",
+              "verb": "closeOptions",
+              "title": "${done}",
+              "associatedInputs": "none"
+            }
           ]
         },
-        { "type": "TextBlock", "$when": "${isAutoSettings}", "text": "${autoClockInSettingsTitle}", "weight": "Bolder", "spacing": "Large", "separator": true, "wrap": true },
-        { "type": "TextBlock", "$when": "${isAutoSettings}", "text": "${autoClockInExplanation}", "isSubtle": true, "wrap": true, "spacing": "Small" },
-        { "type": "Input.Time", "$when": "${isAutoSettings}", "id": "autoClockInAfter", "label": "${autoClockInAfterTitle}", "value": "${autoClockInAfter}", "isRequired": true, "spacing": "Small" },
-        { "type": "Input.Time", "$when": "${isEditing && !use24Hour}", "id": "clockIn", "label": "${clockInTimeLabel}", "value": "${clockInValue}", "isRequired": true, "errorMessage": "${invalidTime}", "spacing": "Large", "separator": true },
-        { "type": "Input.Text", "$when": "${isEditing && use24Hour}", "id": "clockIn", "label": "${clockInTimeLabel}", "placeholder": "09:00", "value": "${clockInValue}", "isRequired": true, "errorMessage": "${invalidTime}", "spacing": "Large", "separator": true },
-        { "type": "TextBlock", "$when": "${hasTimeError}", "text": "${invalidTime}", "color": "Attention", "wrap": true, "spacing": "Small" },
-        { "type": "TextBlock", "$when": "${confirmingClear}", "text": "${confirmClear}", "weight": "Bolder", "wrap": true, "spacing": "Large", "separator": true }
+        {
+          "type": "TextBlock",
+          "text": "${previousShiftSummary}",
+          "spacing": "Small",
+          "wrap": true,
+          "$when": "${hasPreviousShift && $host.widgetSize != 'small'}",
+          "isSubtle": true,
+          "size": "Small",
+          "maxLines": 3
+        }
+      ]
+    },
+    {
+      "type": "Container",
+      "$when": "${showMain && $host.widgetSize == 'small'}",
+      "spacing": "None",
+      "items": [
+        {
+          "type": "ColumnSet",
+          "spacing": "None",
+          "columns": [
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                {
+                  "type": "TextBlock",
+                  "text": "${clockInLabel}",
+                  "spacing": "None",
+                  "wrap": false,
+                  "size": "Small",
+                  "isSubtle": true
+                },
+                {
+                  "type": "TextBlock",
+                  "text": "${clockIn}",
+                  "spacing": "None",
+                  "wrap": false,
+                  "size": "Medium",
+                  "weight": "Bolder"
+                }
+              ]
+            },
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                {
+                  "type": "TextBlock",
+                  "text": "${finishCaption}",
+                  "spacing": "None",
+                  "wrap": false,
+                  "size": "Small",
+                  "isSubtle": true
+                },
+                {
+                  "type": "TextBlock",
+                  "text": "${finishCompact}",
+                  "spacing": "None",
+                  "wrap": false,
+                  "size": "Medium",
+                  "weight": "Bolder"
+                }
+              ]
+            }
+          ],
+          "$when": "${clockedIn && !needsAutoClockInTime}"
+        },
+        {
+          "type": "TextBlock",
+          "text": "${autoClockInMissingShort}",
+          "spacing": "None",
+          "wrap": false,
+          "$when": "${needsAutoClockInTime}",
+          "size": "Small",
+          "weight": "Bolder"
+        },
+        {
+          "type": "TextBlock",
+          "text": "${notClockedInYet}",
+          "spacing": "None",
+          "wrap": false,
+          "$when": "${!clockedIn && !needsAutoClockInTime}",
+          "weight": "Bolder"
+        },
+        {
+          "type": "TextBlock",
+          "text": "${previousShiftCompact}",
+          "spacing": "None",
+          "wrap": false,
+          "$when": "${!clockedIn && hasPreviousShift}",
+          "size": "Small",
+          "isSubtle": true
+        },
+        {
+          "type": "ActionSet",
+          "spacing": "Small",
+          "actions": [
+            {
+              "type": "Action.Execute",
+              "verb": "clockOut",
+              "title": "${clockOutActionTitle}",
+              "$when": "${clockedIn && !needsAutoClockInTime}",
+              "style": "positive"
+            },
+            {
+              "type": "Action.Execute",
+              "verb": "clockIn",
+              "title": "${clockInNow}",
+              "$when": "${!clockedIn || needsAutoClockInTime}",
+              "style": "positive"
+            },
+            {
+              "type": "Action.Execute",
+              "verb": "showOptions",
+              "title": "${more}",
+              "associatedInputs": "none"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Container",
+      "$when": "${showMain && $host.widgetSize == 'medium'}",
+      "spacing": "None",
+      "items": [
+        {
+          "type": "TextBlock",
+          "text": "${date}",
+          "spacing": "None",
+          "wrap": false,
+          "size": "Small",
+          "weight": "Bolder"
+        },
+        {
+          "type": "TextBlock",
+          "text": "${nowLabel} ${now}",
+          "spacing": "Small",
+          "wrap": false,
+          "size": "Small",
+          "isSubtle": true
+        },
+        {
+          "type": "ColumnSet",
+          "spacing": "Small",
+          "columns": [
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                {
+                  "type": "TextBlock",
+                  "text": "${clockInLabel}",
+                  "spacing": "None",
+                  "wrap": false,
+                  "size": "Small",
+                  "isSubtle": true
+                },
+                {
+                  "type": "TextBlock",
+                  "text": "${clockIn}",
+                  "spacing": "None",
+                  "wrap": false,
+                  "size": "Large",
+                  "weight": "Bolder"
+                }
+              ]
+            },
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                {
+                  "type": "TextBlock",
+                  "text": "${finishCaption}",
+                  "spacing": "None",
+                  "wrap": false,
+                  "size": "Small",
+                  "isSubtle": true
+                },
+                {
+                  "type": "TextBlock",
+                  "text": "${finishCompact}",
+                  "spacing": "None",
+                  "wrap": false,
+                  "size": "Large",
+                  "weight": "Bolder"
+                }
+              ]
+            }
+          ],
+          "$when": "${clockedIn}"
+        },
+        {
+          "type": "TextBlock",
+          "text": "${notClockedInYet}",
+          "spacing": "Small",
+          "wrap": false,
+          "$when": "${!clockedIn}",
+          "size": "Medium",
+          "weight": "Bolder"
+        },
+        {
+          "type": "ActionSet",
+          "spacing": "Small",
+          "actions": [
+            {
+              "type": "Action.Execute",
+              "verb": "clockOut",
+              "title": "${clockOutActionTitle}",
+              "$when": "${clockedIn && !needsAutoClockInTime}",
+              "style": "positive"
+            },
+            {
+              "type": "Action.Execute",
+              "verb": "clockIn",
+              "title": "${clockInNow}",
+              "$when": "${!clockedIn || needsAutoClockInTime}",
+              "style": "positive"
+            },
+            {
+              "type": "Action.Execute",
+              "verb": "showOptions",
+              "title": "${more}",
+              "associatedInputs": "none"
+            }
+          ]
+        },
+        {
+          "type": "TextBlock",
+          "text": "${previousShiftSummary}",
+          "spacing": "Small",
+          "wrap": true,
+          "$when": "${hasPreviousShift}",
+          "isSubtle": true,
+          "size": "Small",
+          "maxLines": 2
+        },
+        {
+          "type": "TextBlock",
+          "text": "${autoClockInMissing}",
+          "spacing": "Small",
+          "wrap": true,
+          "$when": "${needsAutoClockInTime}",
+          "isSubtle": true,
+          "size": "Small",
+          "maxLines": 2
+        }
+      ]
+    },
+    {
+      "type": "Container",
+      "$when": "${showMain && $host.widgetSize == 'large'}",
+      "spacing": "None",
+      "items": [
+        {
+          "type": "TextBlock",
+          "text": "${date}",
+          "spacing": "None",
+          "wrap": false,
+          "size": "Medium",
+          "weight": "Bolder"
+        },
+        {
+          "type": "TextBlock",
+          "text": "${nowLabel} ${now}",
+          "spacing": "Small",
+          "wrap": false,
+          "size": "Small",
+          "isSubtle": true
+        },
+        {
+          "type": "ColumnSet",
+          "spacing": "Small",
+          "columns": [
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                {
+                  "type": "TextBlock",
+                  "text": "${clockInLabel}",
+                  "spacing": "None",
+                  "wrap": false,
+                  "size": "Small",
+                  "isSubtle": true
+                },
+                {
+                  "type": "TextBlock",
+                  "text": "${clockIn}",
+                  "spacing": "None",
+                  "wrap": false,
+                  "size": "ExtraLarge",
+                  "weight": "Bolder"
+                }
+              ]
+            },
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                {
+                  "type": "TextBlock",
+                  "text": "${finishCaption}",
+                  "spacing": "None",
+                  "wrap": false,
+                  "size": "Small",
+                  "isSubtle": true
+                },
+                {
+                  "type": "TextBlock",
+                  "text": "${finish}",
+                  "spacing": "None",
+                  "wrap": false,
+                  "size": "ExtraLarge",
+                  "weight": "Bolder"
+                },
+                {
+                  "type": "TextBlock",
+                  "$when": "${endsNextDay}",
+                  "text": "${endsTomorrow}",
+                  "size": "Small",
+                  "isSubtle": true,
+                  "spacing": "None",
+                  "wrap": false
+                }
+              ]
+            }
+          ],
+          "$when": "${clockedIn}"
+        },
+        {
+          "type": "TextBlock",
+          "text": "${workHoursSummary}",
+          "spacing": "Small",
+          "wrap": false,
+          "$when": "${clockedIn}",
+          "size": "Small",
+          "isSubtle": true
+        },
+        {
+          "type": "TextBlock",
+          "text": "${notClockedInYet}",
+          "spacing": "Small",
+          "wrap": false,
+          "$when": "${!clockedIn}",
+          "size": "Medium",
+          "weight": "Bolder"
+        },
+        {
+          "type": "ActionSet",
+          "spacing": "Small",
+          "actions": [
+            {
+              "type": "Action.Execute",
+              "verb": "clockOut",
+              "title": "${clockOutActionTitle}",
+              "$when": "${clockedIn && !needsAutoClockInTime}",
+              "style": "positive"
+            },
+            {
+              "type": "Action.Execute",
+              "verb": "clockIn",
+              "title": "${clockInNow}",
+              "$when": "${!clockedIn || needsAutoClockInTime}",
+              "style": "positive"
+            },
+            {
+              "type": "Action.Execute",
+              "verb": "showOptions",
+              "title": "${more}",
+              "associatedInputs": "none"
+            }
+          ]
+        },
+        {
+          "type": "TextBlock",
+          "text": "${previousShiftSummary}",
+          "spacing": "Small",
+          "wrap": true,
+          "$when": "${hasPreviousShift}",
+          "isSubtle": true,
+          "size": "Small",
+          "maxLines": 2
+        },
+        {
+          "type": "TextBlock",
+          "text": "${autoClockInMissing}",
+          "spacing": "Small",
+          "wrap": true,
+          "$when": "${needsAutoClockInTime}",
+          "isSubtle": true,
+          "size": "Small",
+          "maxLines": 2
+        },
+        {
+          "type": "TextBlock",
+          "text": "${autoClockInStatus}",
+          "spacing": "Small",
+          "wrap": false,
+          "size": "Small",
+          "isSubtle": true
+        }
       ]
     }
-  ],
-  "actions": [
-    { "type": "Action.Execute", "$when": "${canClockOut}", "title": "${clockOutActionTitle}", "verb": "clockOut", "style": "positive" },
-    { "type": "Action.Execute", "$when": "${!clockedIn && !isEditing && !confirmingClear && !isAutoSettings}", "title": "${clockInActionTitle}", "verb": "clockIn", "style": "positive" },
-    { "type": "Action.Execute", "$when": "${clockedIn && isWorkdayComplete && !isEditing && !confirmingClear && !isAutoSettings}", "title": "${clockInActionTitle}", "verb": "clockIn" },
-    { "type": "Action.Execute", "$when": "${canUndoClockOut}", "title": "${undoClockOutActionTitle}", "verb": "undoClockOut" },
-    { "type": "Action.Execute", "$when": "${canEdit && !isWorkdayComplete}", "title": "✎  ${editTime}", "verb": "edit" },
-    { "type": "Action.Execute", "$when": "${isEditing}", "title": "${saveChanges}", "verb": "saveTime", "style": "positive" },
-    { "type": "Action.Execute", "$when": "${isEditing}", "title": "${cancelEdit}", "verb": "cancelEdit" },
-    { "type": "Action.Execute", "$when": "${isAutoSettings}", "title": "${autoClockInPrimaryAction}", "verb": "saveAutoClockIn", "style": "positive" },
-    { "type": "Action.Execute", "$when": "${isAutoSettings && autoClockInEnabled}", "title": "${turnOffAutoClockIn}", "verb": "turnOffAutoClockIn", "style": "destructive" },
-    { "type": "Action.Execute", "$when": "${isAutoSettings}", "title": "${cancel}", "verb": "cancelAutoClockIn" },
-    { "type": "Action.Execute", "$when": "${confirmingClear}", "title": "×  ${clear}", "verb": "clear", "style": "destructive" },
-    { "type": "Action.Execute", "$when": "${confirmingClear}", "title": "${cancel}", "verb": "cancelClear" }
   ]
 }

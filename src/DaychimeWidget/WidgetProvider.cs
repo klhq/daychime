@@ -40,7 +40,7 @@ public sealed class WidgetProvider : IWidgetProvider
 
     private static void OnSessionSwitch(object sender, SessionSwitchEventArgs e)
     {
-        if (e.Reason != SessionSwitchReason.SessionUnlock)
+        if (e.Reason != SessionSwitchReason.SessionUnlock && e.Reason != SessionSwitchReason.SessionLogon)
             return;
 
         ProviderDiagnostics.Write("Session unlock detected.");

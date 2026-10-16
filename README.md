@@ -10,7 +10,7 @@ A focused Windows 11 widget for tracking your workday: clock in with one tap, se
 - **Estimated finish, always visible** — computed from clock-in time plus a configurable workday length.
 - **Actual clock-out** — clock out when you leave to record the real finish time and elapsed time. Undo an accidental clock-out before starting another shift.
 - **Configurable workday length** — a small accent-colored chip cycles through presets (8, 8.5, 9, 9.5, 10 hours); default is 9.
-- **Auto clock-in after your chosen time** (opt-in) — records the first eligible unlock in each work cycle. If Windows stopped the widget provider, opening the widget uses the opening time as a fallback. Set 06:00 for a typical day job or 18:00 for a night shift.
+- **Auto clock-in after your chosen time** (opt-in) — records the first eligible Windows sign-in or unlock in each work cycle. If the provider starts later, it recovers the timestamp from available Windows session records for your account and session. Opening the panel never substitutes its opening time. If Windows has no accessible record, the widget asks you to clock in and correct the start manually. Set 06:00 for a typical day job or 18:00 for a night shift.
 - **Edit or clear** — fix a wrong clock-in time, or clear the current shift entirely (with a confirm step).
 - **12/24-hour display** — a one-tap chip next to "Now", independent of the clock-in flow.
 - **Finish-time reminder** — a Windows notification at your estimated finish time, with a **Clock out now** button that records the time you click. Old notifications cannot clock out a newer shift; undo an accidental clock-out in the widget. Windows notification settings apply, and reminders can be missed when the computer is off.
@@ -22,7 +22,7 @@ A focused Windows 11 widget for tracking your workday: clock in with one tap, se
 
 ## Design principles
 
-No dedicated settings screen. Adaptive Cards' action model doesn't have room for one on this host anyway, and a widget you check daily shouldn't behave like a settings form. Every preference (time format, auto clock-in, workday length) lives as a small in-body, one-tap chip instead — visible when relevant, silent otherwise. The footer never carries more than two buttons at once.
+Keep the main view focused on clock-in and estimated finish. Small has only 82 pixels of content height, so secondary controls live under More. Edit, auto clock-in and clear confirmation each replace the main content with a compact form. Save and Cancel share the input row so neither can fall below the card. See [widget layout checks](docs/widget-layout.md) for size constraints and visual regression checks.
 
 ## Install
 
