@@ -50,25 +50,12 @@ internal static class TimeInputTests
                                 throw new Exception($"Displayed time '{shown}' did not parse back to {expected:HH:mm}.");
                         }
             }
-            // Hour and minute drop-downs submit exactly two ASCII digits each.
-            for (var minutes = 0; minutes < 24 * 60; minutes++)
-            {
-                var expected = new TimeOnly(minutes / 60, minutes % 60);
-                if (!TimeInput.TryParseParts(expected.ToString("HH", CultureInfo.InvariantCulture), expected.ToString("mm", CultureInfo.InvariantCulture), out var parsed) || parsed != expected)
-                    throw new Exception($"Drop-down time {expected:HH:mm} did not parse.");
-            }
-            foreach (var (hour, minute) in new (string?, string?)[] { (null, "00"), ("09", null), ("9", "30"), ("09", "3"), ("24", "00"), ("23", "60"),
-                (" 9", "30"), ("+9", "30"), ("０９", "30"), ("09", "030"), ("", "") })
-                if (TimeInput.TryParseParts(hour, minute, out _)) throw new Exception($"Invalid drop-down time was accepted: '{hour}':'{minute}'.");
-            if (TimeInput.FormatHour(0, false, "{0} {1}", "AM", "PM") != "12 AM" || TimeInput.FormatHour(12, false, "{1} {0}", "上午", "下午") != "下午 12"
-                || TimeInput.FormatHour(21, false, "{0} {1}", "AM", "PM") != "9 PM" || TimeInput.FormatHour(7, true, "", "", "") != "07")
-                throw new Exception("Hour drop-down titles changed.");
             if (TimeInput.Format(new TimeOnly(0, 5), false, "{0}:{1:00} {2}", "AM", "PM") != "12:05 AM"
                 || TimeInput.Format(new TimeOnly(12, 0), false, "{2} {0}:{1:00}", "上午", "下午") != "下午 12:00"
                 || TimeInput.Format(new TimeOnly(9, 5), true, "", "", "") != "09:05")
                 throw new Exception("Time display format changed.");
         }
         finally { CultureInfo.CurrentCulture = original; }
-        Console.WriteLine("Passed: 24-hour and explicit AM/PM formats, equivalent full-width characters, boundaries, display round-trip, drop-down values and culture-independent rejection.");
+        Console.WriteLine("Passed: 24-hour and explicit AM/PM formats, equivalent full-width characters, boundaries, display round-trip and culture-independent rejection.");
     }
 }

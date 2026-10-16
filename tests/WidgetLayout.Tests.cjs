@@ -37,13 +37,6 @@ function buildData(s, mode, language) {
   const f = (text, ...values) => text.replace(/\{(\d+)(?::(0+))?\}/g, (_, index, pad) => String(values[index]).padStart(pad ? pad.length : 0, '0'));
   const clock = (h, m) => f(s.time12, h, m, s.pm);
   const time = clock(12, '59');
-  // Same shape as Daychime.SetTimeChoices: 12-hour titles, two-digit 24-hour values.
-  const pad = n => String(n).padStart(2, '0');
-  const timeChoices = (prefix, hour, minute) => ({
-    hourChoices: [...Array(24).keys()].map(h => ({ title: f(s.hour12, h % 12 || 12, h < 12 ? s.am : s.pm), value: pad(h) })),
-    minuteChoices: [...Array(60).keys()].map(m => ({ title: pad(m), value: pad(m) })),
-    [prefix + 'Hour']: hour, [prefix + 'Minute']: minute
-  });
   const date = language === 0 ? 'Wed, Sep 30' : '9月30日 週三';
   const data = {
     view: 'main', showShift: false, isOvertime: false, date, now: f(s.nowLine, time),
@@ -83,7 +76,7 @@ function buildData(s, mode, language) {
   if (mode.startsWith('edit')) {
     const error = mode === 'edit-future' ? s.futureClockInShort : mode === 'edit-dst' ? s.invalidLocalTimeShort : s.invalidTimeShort;
     Object.assign(data, { view: 'edit', editHint: date, editLabel: s.clockInTimeLabel, editLabelShort: f(s.editLabelShort, '9/30'),
-      ...timeChoices('clockIn', ...({ 'edit-future': ['23', '59'], 'edit-dst': ['02', '30'] }[mode] || ['12', '59'])),
+      clockInValue: { 'edit-future': '23:59', 'edit-dst': '02:30' }[mode] || '12:59',
       save: s.saveShort, cancel: s.cancel, hasTimeError: mode !== 'edit', clockInTimeError: error, clearTitle: s.clearLink });
   } else if (mode === 'confirm-clear') {
     Object.assign(data, { view: 'confirmClear', confirmClear: s.confirmClear, confirmClearHint: s.confirmClearHint, clear: s.clear, cancel: s.cancel });
@@ -94,7 +87,7 @@ function buildData(s, mode, language) {
       timeFormatLabel: s.timeFormatLabel, timeFormatValue: 'system',
       timeFormatChoices: [['system', s.timeFormatSystem], ['12', s.timeFormat12], ['24', s.timeFormat24]].map(([value, title]) => ({ title, value })),
       autoToggleTitle: s.autoToggleTitle, autoValue: 'true', autoAfterLabel: s.autoAfterLabel,
-      ...timeChoices('autoAfter', '06', '00'), hasAutoTimeError: mode === 'customize-error', invalidTimeShort: s.invalidTimeShort, autoClockInExplanation: f(s.autoClockInExplanation, clock(6, '00')), customizeSmallHint: s.customizeSmallHint,
+      autoAfterValue: '06:00', hasAutoTimeError: mode === 'customize-error', invalidTimeShort: s.invalidTimeShort, autoClockInExplanation: f(s.autoClockInExplanation, clock(6, '00')), customizeSmallHint: s.customizeSmallHint,
       done: s.done, cancel: s.cancel });
   }
   return data;
@@ -113,6 +106,9 @@ let layoutBrowser;
     await page.addScriptTag({path:path.join(deps, 'adaptivecards-templating/package/dist/adaptivecards-templating.min.js')});
     await page.addStyleTag({path:path.join(deps, 'adaptivecards/package/dist/adaptivecards.css')});
     await page.addStyleTag({path:path.join(dependencies, `src/containers/widget/widget-container-${theme}.css`)});
+    // The Widgets host draws Input.Time as a WinUI TimePicker, which is at least 242px wide.
+    // The renderer sets an inline min-width:0, so the emulated minimum needs !important.
+    await page.addStyleTag({content:'input[type="time"]{min-width:242px !important;box-sizing:border-box}'});
     const host = JSON.parse(fs.readFileSync(path.join(dependencies, `lib/hostConfigs/widget-${theme}.json`), 'utf8'));
     for (const [language, relative] of locales.entries()) {
       const s = JSON.parse(fs.readFileSync(path.join(root, 'src/DaychimeWidget', relative), 'utf8'));
@@ -189,25 +185,21 @@ let layoutBrowser;
           if(mode.startsWith('edit') && !content.textContent.includes(size==='small' ? (data.hasTimeError ? data.clockInTimeError : data.editLabelShort) : data.editHint)) errors.push('Edit form does not identify the shift date');
           if(mode.startsWith('edit-') && !content.textContent.includes(data.clockInTimeError)) errors.push('Edit form does not display the specific time error');
           if(mode==='customize-error' && size!=='small' && !content.textContent.includes(data.invalidTimeShort)) errors.push('Customization does not display the time error');
-          const form = mode==='edit' ? {save:'saveTime', cancel:'cancelEdit', input:'clockIn', data:'clockIn'}
-            : mode==='customize' && size!=='small' ? {save:'saveCustomization', cancel:'cancelCustomization', input:'autoClockInAfter', data:'autoAfter'} : null;
+          const form = mode==='edit' ? {save:'saveTime', cancel:'cancelEdit', input:'clockIn', data:'clockInValue'}
+            : mode==='customize' && size!=='small' ? {save:'saveCustomization', cancel:'cancelCustomization', input:'autoClockInAfter', data:'autoAfterValue'} : null;
           if(form) {
-            // Times are hour and minute drop-downs, so their titles can follow the card's 12/24-hour setting.
-            const selects=[...content.querySelectorAll('select')];
-            // Compact choice sets add an empty placeholder option.
-            const count=x=>[...x.options].filter(o=>o.value).length;
-            const hour=selects.find(x=>count(x)===24), minute=selects.find(x=>count(x)===60);
-            if(content.querySelector('input:not([type="checkbox"])')) errors.push('A time field is free text or a system time picker');
-            if(!hour || !minute) errors.push('Time is not an hour and minute drop-down');
+            // Times use the system time picker (Input.Time), which submits HH:mm.
+            const pickers=content.querySelectorAll('input[type="time"]');
+            if(pickers.length!==1 || content.querySelector('input[type="text"]')) errors.push('Time is not a single system time picker');
             else {
-              const shown=hour.selectedOptions[0]?.textContent, expectedHour=data.hourChoices.find(c=>c.value===data[form.data+'Hour']).title;
-              if(shown!==expectedHour || minute.value!==data[form.data+'Minute']) errors.push(`Drop-downs show ${shown}:${minute.value}, expected ${expectedHour}:${data[form.data+'Minute']}`);
+              const picker=pickers[0];
+              if(picker.value!==data[form.data]) errors.push(`Time picker shows ${picker.value}, expected ${data[form.data]}`);
               const press=title=>[...content.querySelectorAll('button')].find(b=>b.textContent===title)?.click();
-              hour.value='07'; minute.value='45';
+              picker.value='07:45';
               window.lastLayoutAction=null;
               press(form.save==='saveTime' ? data.save : data.done);
               const sent=window.lastLayoutAction?.data||{};
-              if(window.lastLayoutAction?.verb!==form.save || sent[form.input+'Hour']!=='07' || sent[form.input+'Minute']!=='45')
+              if(window.lastLayoutAction?.verb!==form.save || sent[form.input]!=='07:45')
                 errors.push('Save did not submit the edited time: '+JSON.stringify(window.lastLayoutAction));
               if(form.save==='saveCustomization' && (sent.workHours!=='9.5' || sent.timeFormat!=='system' || sent.autoClockIn!=='true'))
                 errors.push('Customization did not submit every setting: '+JSON.stringify(sent));

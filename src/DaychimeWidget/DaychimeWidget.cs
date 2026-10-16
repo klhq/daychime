@@ -181,8 +181,8 @@ internal sealed class Daychime : WidgetImplBase
             data["editHint"] = start.ToString(T("dateFormat"), CultureInfo.CurrentCulture);
             data["editLabel"] = T("clockInTimeLabel");
             data["editLabelShort"] = F("editLabelShort", start.ToString("M/d", CultureInfo.CurrentCulture));
-            // After a rejected save the drop-downs keep the submitted time.
-            SetTimeChoices(data, "clockIn", hasTimeError && submittedClockIn is TimeOnly submitted ? submitted : TimeOnly.FromDateTime(start.DateTime), use24Hour, s);
+            // After a rejected save the time picker keeps the submitted time.
+            data["clockInValue"] = TimeValue(hasTimeError && submittedClockIn is TimeOnly submitted ? submitted : TimeOnly.FromDateTime(start.DateTime));
             data["save"] = T("saveShort");
             data["cancel"] = T("cancel");
             data["hasTimeError"] = hasTimeError;
@@ -217,7 +217,7 @@ internal sealed class Daychime : WidgetImplBase
             data["autoToggleTitle"] = T("autoToggleTitle");
             data["autoValue"] = autoClockIn ? "true" : "false";
             data["autoAfterLabel"] = T("autoAfterLabel");
-            SetTimeChoices(data, "autoAfter", autoClockInAfter, use24Hour, s);
+            data["autoAfterValue"] = TimeValue(autoClockInAfter);
             data["hasAutoTimeError"] = hasAutoTimeError;
             data["invalidTimeShort"] = T("invalidTimeShort");
             data["autoClockInExplanation"] = F("autoClockInExplanation", Clock(new TimeOnly(18, 0)));
@@ -228,27 +228,8 @@ internal sealed class Daychime : WidgetImplBase
         return data.ToJsonString();
     }
 
-    // Hour and minute drop-downs: titles follow the card's 12/24-hour setting (Input.Time
-    // would follow Windows' clock instead); values are always two-digit 24-hour numbers.
-    private static void SetTimeChoices(JsonObject data, string prefix, TimeOnly value, bool use24Hour, JsonObject strings)
-    {
-        var hours = new JsonArray();
-        for (var hour = 0; hour < 24; hour++)
-            hours.Add(new JsonObject {
-                ["title"] = TimeInput.FormatHour(hour, use24Hour, GetString(strings, "hour12"), GetString(strings, "am"), GetString(strings, "pm")),
-                ["value"] = hour.ToString("00", CultureInfo.InvariantCulture)
-            });
-        var minutes = new JsonArray();
-        for (var minute = 0; minute < 60; minute++)
-        {
-            var text = minute.ToString("00", CultureInfo.InvariantCulture);
-            minutes.Add(new JsonObject { ["title"] = text, ["value"] = text });
-        }
-        data["hourChoices"] = hours;
-        data["minuteChoices"] = minutes;
-        data[prefix + "Hour"] = value.Hour.ToString("00", CultureInfo.InvariantCulture);
-        data[prefix + "Minute"] = value.Minute.ToString("00", CultureInfo.InvariantCulture);
-    }
+    // Input.Time takes and submits HH:mm; the host's picker shows it in Windows' clock format.
+    private static string TimeValue(TimeOnly value) => value.ToString("HH:mm", CultureInfo.InvariantCulture);
 
     private static void SetPrimary(JsonObject data, JsonObject strings, string verb, string shortKey, string longKey)
     {
@@ -547,9 +528,8 @@ internal sealed class Daychime : WidgetImplBase
     private static string ReadString(JsonElement root, string name) =>
         root.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 
-    // Reads the <prefix>Hour and <prefix>Minute drop-downs.
-    private static bool TryReadTime(JsonElement root, string prefix, out TimeOnly time) =>
-        TimeInput.TryParseParts(ReadString(root, prefix + "Hour"), ReadString(root, prefix + "Minute"), out time);
+    private static bool TryReadTime(JsonElement root, string name, out TimeOnly time) =>
+        TimeInput.TryParse(ReadString(root, name), out time);
 
     private void UpdateFinishReminder()
     {

@@ -67,7 +67,6 @@
   "timeFormat12": "12-hour",
   "timeFormat24": "24-hour",
   "time12": "{0}:{1:00} {2}",
-  "hour12": "{0} {1}",
   "am": "AM",
   "pm": "PM",
   "autoToggleTitle": "Clock in automatically on sign-in or unlock",
