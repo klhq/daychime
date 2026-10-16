@@ -51,6 +51,10 @@ Microsoft signs the Store package; do not sign the upload locally or replace its
 
 ## Local checks and packaging
 
+The workflow's JavaScript actions use Node.js 24 and are pinned to exact commit SHAs. When updating them, check the official releases, runtime/runner requirements, and input compatibility, then update both the SHA and version comment. `archive: true` preserves the documented artifact ZIP download format. These action runtimes are separate from Daychime's .NET runtime.
+
+Workflow changes apply only to refs containing the changes. Existing release tags and their logs remain unchanged; do not move a release tag to remove an old warning. A CI-runtime deprecation warning does not invalidate an already successfully built Store upload file.
+
 ```powershell
 ./scripts/Validate-Release.ps1 -Tag v1.0.37
 ./tests/ReleaseValidation.Tests.ps1
