@@ -16,9 +16,13 @@ public sealed class WidgetProvider : IWidgetProvider
 {
     public WidgetProvider()
     {
+        HostConnected = true;
         RecoverRunningWidgets();
         RegisterForSessionUnlock();
     }
+
+    // Set once the Widgets host has created a provider in this process.
+    internal static bool HostConnected { get; private set; }
 
     private static bool HaveRegisteredSessionEvents { get; set; } = false;
     private static void RegisterForSessionUnlock()
@@ -44,6 +48,14 @@ public sealed class WidgetProvider : IWidgetProvider
             return;
 
         ProviderDiagnostics.Write("Session unlock detected.");
+        HandleSessionUnlock();
+    }
+
+    // Shared by the live session notification and the sign-in/unlock background task.
+    // Repeated calls are safe: each widget handles at most one auto clock-in per cycle.
+    internal static void HandleSessionUnlock()
+    {
+        RecoverRunningWidgets();
         foreach (var widget in WidgetInstances.Values)
         {
             try

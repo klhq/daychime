@@ -5,6 +5,7 @@ using Microsoft.Windows.Widgets.Providers;
 using System;
 using System.Globalization;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using WidgetHelper;
 
 namespace DaychimeWidget
@@ -24,7 +25,7 @@ namespace DaychimeWidget
         {
             ProviderDiagnostics.Write($"Started: {string.Join(' ', args)}");
             Console.WriteLine("DaychimeWidget Starting...");
-            if (args.Length > 0 && (args[0] == "-RegisterProcessAsComServer" || args[0] == "-ToastActivated"))
+            if (args.Length > 0 && (args[0] == "-RegisterProcessAsComServer" || args[0] == "-ToastActivated" || args[0] == "-BackgroundTask"))
             {
                 WinRT.ComWrappersSupport.InitializeComWrappers();
                 using (var manager = RegistrationManager<WidgetProvider>.RegisterProvider())
@@ -34,6 +35,22 @@ namespace DaychimeWidget
 
                     RefreshExistingWidgets();
                     using var notifications = NotificationActivation.Register();
+                    using var backgroundTask = SessionBackgroundTask.Register();
+                    Task.Run(SessionBackgroundTask.EnsureRegistered);
+
+                    // A sign-in/unlock launch only needs to run the task. Stay only if the
+                    // Widgets host connected meanwhile; otherwise leave nothing resident.
+                    if (args[0] == "-BackgroundTask")
+                    {
+                        SessionBackgroundTask.Completed.WaitOne(TimeSpan.FromMinutes(1));
+                        // Let Run's COM reply reach Windows before revoking and exiting.
+                        System.Threading.Thread.Sleep(TimeSpan.FromSeconds(2));
+                        if (!WidgetProvider.HostConnected)
+                        {
+                            ProviderDiagnostics.Write("Background task launch finished; exiting.");
+                            return;
+                        }
+                    }
 
                     var existingWidgets = WidgetManager.GetDefault().GetWidgetIds();
                     if (existingWidgets != null)

@@ -47,6 +47,10 @@
 					<com:ExeServer Executable="DaychimeWidget.exe" Arguments="-ToastActivated" DisplayName="Daychime">
 						<com:Class Id="7C68559D-9F68-4204-AB41-65E463F76304" DisplayName="Daychime notification" />
 					</com:ExeServer>
+					<!-- Sign-in/unlock background task (BackgroundTaskBuilder.SetTaskEntryPointClsid). -->
+					<com:ExeServer Executable="DaychimeWidget.exe" Arguments="-BackgroundTask" DisplayName="Daychime">
+						<com:Class Id="3F6B2C1E-8D4A-4E7B-9C21-5A7D0E9B4F63" DisplayName="Daychime session task" />
+					</com:ExeServer>
 					<com:ExeServer Executable="DaychimeWidget.exe" Arguments="-RegisterProcessAsComServer" DisplayName="Daychime">
 						<com:Class Id="80DAE84C-DE3C-4F02-8ECD-DCDD1CDECC15" DisplayName="Daychime" />
 						</com:ExeServer>
