@@ -33,13 +33,15 @@ const bars = { barLight: progressBar([0x00, 0x5F, 0xB8, 0xFF]), barDark: progres
 
 // Mirrors Daychime.GetDataForWidget with worst-case lengths (12-hour times, double-digit hours).
 function buildData(s, mode, language) {
-  const f = (text, ...values) => values.reduce((result, value, index) => result.replace(`{${index}}`, value), text);
-  const time = '12:59 PM';
+  // .NET composite format: {0}, plus zero-padding specs such as {1:00}.
+  const f = (text, ...values) => text.replace(/\{(\d+)(?::(0+))?\}/g, (_, index, pad) => String(values[index]).padStart(pad ? pad.length : 0, '0'));
+  const clock = (h, m) => f(s.time12, h, m, s.pm);
+  const time = clock(12, '59');
   const date = language === 0 ? 'Wed, Sep 30' : '9月30日 週三';
   const data = {
     view: 'main', showShift: false, isOvertime: false, date, now: f(s.nowLine, time),
     editShort: s.editShort, editTitle: s.editTime, previousCaption: s.previousCaption, settingsCaption: s.settingsCaption,
-    settingsLine: f(s.settingsLine, '9.5', s.timeFormat12, f(s.autoOnSummary, '06:00')),
+    settingsLine: f(s.settingsLine, '9.5', s.timeFormat12, f(s.autoOnSummary, f(s.time12, 6, '00', s.am))),
     timezoneAdjusted: false, timezoneAdjustedNote: s.timezoneAdjustedNote, hasPrevious: true,
     previousLine: f(s.previousRange, `9/29 ${time}`, `9/30 ${time}`, f(s.elapsedHoursMinutes, 10, 59)),
     previousShort: f(s.previousCompact, time, time)
@@ -68,13 +70,13 @@ function buildData(s, mode, language) {
   } else if (mode.startsWith('idle') || mode.startsWith('customize')) {
     const auto = mode !== 'idle-manual';
     Object.assign(data, { headline: s.headlineIdle, statusShort: auto ? s.statusIdleAutoShort : s.statusIdleManualShort,
-      statusLong: auto ? f(s.statusIdleAutoLong, '06:00') : s.statusIdleManualLong, hasPrevious: mode !== 'idle' });
+      statusLong: auto ? f(s.statusIdleAutoLong, f(s.time12, 6, '00', s.am)) : s.statusIdleManualLong, hasPrevious: mode !== 'idle' });
     primary('clockIn', 'clockInShort', 'clockInLong');
   }
   if (mode.startsWith('edit')) {
-    const error = mode === 'edit-future' ? s.futureClockInShort : mode === 'edit-dst' ? s.invalidLocalTimeShort : s.invalidTimeShort;
-    Object.assign(data, { view: 'edit', editHint: f(s.editHint, date), editLabel: s.clockInTimeLabel, editLabelShort: f(s.editLabelShort, '9/30'),
-      clockInValue: { 'edit-error': '25:99', 'edit-future': '23:59', 'edit-dst': '02:30' }[mode] || '09:00',
+    const error = mode === 'edit-future' ? s.futureClockInShort : mode === 'edit-dst' ? s.invalidLocalTimeShort : f(s.invalidTimeShort, f(s.time12, 9, '30', s.am));
+    Object.assign(data, { view: 'edit', editHint: f(s.editHint, date, f(s.time12, 9, '30', s.am)), timePlaceholder: f(s.time12, 9, '30', s.am), editLabel: s.clockInTimeLabel, editLabelShort: f(s.editLabelShort, '9/30'),
+      clockInValue: { 'edit-error': '25:99', 'edit-future': clock(11, '59'), 'edit-dst': f(s.time12, 2, '30', s.am) }[mode] || time,
       save: s.saveShort, cancel: s.cancel, hasTimeError: mode !== 'edit', clockInTimeError: error, clearTitle: s.clearLink });
   } else if (mode === 'confirm-clear') {
     Object.assign(data, { view: 'confirmClear', confirmClear: s.confirmClear, confirmClearHint: s.confirmClearHint, clear: s.clear, cancel: s.cancel });
@@ -85,8 +87,9 @@ function buildData(s, mode, language) {
       timeFormatLabel: s.timeFormatLabel, timeFormatValue: 'system',
       timeFormatChoices: [['system', s.timeFormatSystem], ['12', s.timeFormat12], ['24', s.timeFormat24]].map(([value, title]) => ({ title, value })),
       autoToggleTitle: s.autoToggleTitle, autoValue: 'true', autoAfterLabel: s.autoAfterLabel,
-      autoAfterValue: mode === 'customize-error' ? '25:99' : '06:00', hasAutoTimeError: mode === 'customize-error',
-      invalidTimeShort: s.invalidTimeShort, autoClockInExplanation: s.autoClockInExplanation, customizeSmallHint: s.customizeSmallHint,
+      autoAfterValue: mode === 'customize-error' ? '25:99' : f(s.time12, 6, '00', s.am), autoAfterPlaceholder: f(s.time12, 6, '00', s.am),
+      hasAutoTimeError: mode === 'customize-error',
+      invalidTimeShort: f(s.invalidTimeShort, f(s.time12, 6, '00', s.am)), autoClockInExplanation: f(s.autoClockInExplanation, clock(6, '00')), customizeSmallHint: s.customizeSmallHint,
       done: s.done, cancel: s.cancel });
   }
   return data;

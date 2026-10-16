@@ -88,8 +88,9 @@ internal sealed class Daychime : WidgetImplBase
         string F(string key, params object[] values) => string.Format(CultureInfo.CurrentCulture, T(key), values);
 
         var use24Hour = GetUse24Hour();
-        var timeFormat = use24Hour ? "HH:mm" : CultureInfo.CurrentCulture.DateTimeFormat.ShortTimePattern;
-        string Time(DateTimeOffset value) => value.ToLocalTime().ToString(timeFormat, CultureInfo.CurrentCulture);
+        // Displayed times and prefilled inputs share one format, so an untouched input saves unchanged.
+        string Clock(TimeOnly value) => FormatClock(value, use24Hour, s);
+        string Time(DateTimeOffset value) => Clock(TimeOnly.FromDateTime(value.ToLocalTime().DateTime));
         string Duration(TimeSpan span) => span.TotalMinutes >= 60
             ? F("durationHoursMinutes", (int)span.TotalHours, span.Minutes) : F("durationMinutes", span.Minutes);
 
@@ -123,11 +124,11 @@ internal sealed class Daychime : WidgetImplBase
             ["previousCaption"] = T("previousCaption"),
             ["settingsCaption"] = T("settingsCaption"),
             ["settingsLine"] = F("settingsLine", FormatHours(GetDefaultWorkHours()), T(use24Hour ? "timeFormat24" : "timeFormat12"),
-                autoClockIn ? F("autoOnSummary", autoClockInAfter.ToString("HH:mm", CultureInfo.InvariantCulture)) : T("autoOffSummary")),
+                autoClockIn ? F("autoOnSummary", Clock(autoClockInAfter)) : T("autoOffSummary")),
             ["timezoneAdjusted"] = showShift && ShiftLifecycle.IsStartShownInDifferentOffset(shift, TimeZoneInfo.Local),
             ["timezoneAdjustedNote"] = T("timezoneAdjustedNote"),
             ["hasPrevious"] = snapshot.Previous is not null && phase != WorkdayPhase.ClockedOut,
-            ["previousLine"] = FormatPreviousShift(snapshot.Previous, s, timeFormat),
+            ["previousLine"] = FormatPreviousShift(snapshot.Previous, s, Time),
             ["previousShort"] = snapshot.Previous is Shift previous
                 ? previous.ClockOut is DateTimeOffset previousOut ? F("previousCompact", Time(previous.Start), Time(previousOut)) : T("previousMissingCompact")
                 : ""
@@ -174,7 +175,7 @@ internal sealed class Daychime : WidgetImplBase
             default:
                 data["headline"] = T("headlineIdle");
                 data["statusShort"] = T(autoClockIn ? "statusIdleAutoShort" : "statusIdleManualShort");
-                data["statusLong"] = autoClockIn ? F("statusIdleAutoLong", autoClockInAfter.ToString("HH:mm", CultureInfo.InvariantCulture)) : T("statusIdleManualLong");
+                data["statusLong"] = autoClockIn ? F("statusIdleAutoLong", Clock(autoClockInAfter)) : T("statusIdleManualLong");
                 SetPrimary(data, s, "clockIn", "clockInShort", "clockInLong");
                 break;
         }
@@ -182,18 +183,19 @@ internal sealed class Daychime : WidgetImplBase
         if (view == "edit")
         {
             var start = shift.Start.ToLocalTime();
-            data["editHint"] = F("editHint", start.ToString(T("dateFormat"), CultureInfo.CurrentCulture));
+            data["editHint"] = F("editHint", start.ToString(T("dateFormat"), CultureInfo.CurrentCulture), Clock(new TimeOnly(9, 30)));
             data["editLabel"] = T("clockInTimeLabel");
             data["editLabelShort"] = F("editLabelShort", start.ToString("M/d", CultureInfo.CurrentCulture));
-            data["clockInValue"] = hasTimeError && invalidClockInValue is not null ? invalidClockInValue : start.ToString("HH:mm", CultureInfo.InvariantCulture);
+            data["clockInValue"] = hasTimeError && invalidClockInValue is not null ? invalidClockInValue : Time(start);
+            data["timePlaceholder"] = Clock(new TimeOnly(9, 30));
             data["save"] = T("saveShort");
             data["cancel"] = T("cancel");
             data["hasTimeError"] = hasTimeError;
-            data["clockInTimeError"] = T(clockInEditError switch {
+            data["clockInTimeError"] = F(clockInEditError switch {
                 ShiftTimeEditError.Future => "futureClockInShort",
                 ShiftTimeEditError.InvalidLocalTime => "invalidLocalTimeShort",
                 _ => "invalidTimeShort"
-            });
+            }, Clock(new TimeOnly(9, 30)));
             data["clearTitle"] = T("clearLink");
         }
         else if (view == "confirmClear")
@@ -220,10 +222,11 @@ internal sealed class Daychime : WidgetImplBase
             data["autoToggleTitle"] = T("autoToggleTitle");
             data["autoValue"] = autoClockIn ? "true" : "false";
             data["autoAfterLabel"] = T("autoAfterLabel");
-            data["autoAfterValue"] = hasAutoTimeError && invalidAutoClockInValue is not null ? invalidAutoClockInValue : autoClockInAfter.ToString("HH:mm", CultureInfo.InvariantCulture);
+            data["autoAfterValue"] = hasAutoTimeError && invalidAutoClockInValue is not null ? invalidAutoClockInValue : Clock(autoClockInAfter);
+            data["autoAfterPlaceholder"] = Clock(new TimeOnly(6, 0));
             data["hasAutoTimeError"] = hasAutoTimeError;
-            data["invalidTimeShort"] = T("invalidTimeShort");
-            data["autoClockInExplanation"] = T("autoClockInExplanation");
+            data["invalidTimeShort"] = F("invalidTimeShort", Clock(new TimeOnly(6, 0)));
+            data["autoClockInExplanation"] = F("autoClockInExplanation", Clock(new TimeOnly(18, 0)));
             data["customizeSmallHint"] = T("customizeSmallHint");
             data["done"] = T("done");
             data["cancel"] = T("cancel");
@@ -485,10 +488,10 @@ internal sealed class Daychime : WidgetImplBase
     private void WriteSnapshot(ShiftSnapshot snapshot) =>
         state = $"{ShiftStatePrefix}{SerializeShift(snapshot.Current)}|{SerializeShift(snapshot.Previous)}|{snapshot.LastCycle}";
 
-    private static string FormatPreviousShift(Shift? previous, JsonObject strings, string timeFormat)
+    private static string FormatPreviousShift(Shift? previous, JsonObject strings, Func<DateTimeOffset, string> time)
     {
         if (previous is not Shift shift) return string.Empty;
-        string FormatTime(DateTimeOffset value) => $"{value.ToLocalTime().ToString("M/d", CultureInfo.CurrentCulture)} {value.ToLocalTime().ToString(timeFormat, CultureInfo.CurrentCulture)}";
+        string FormatTime(DateTimeOffset value) => $"{value.ToLocalTime().ToString("M/d", CultureInfo.CurrentCulture)} {time(value)}";
         if (shift.ClockOut is DateTimeOffset clockOut)
         {
             var elapsedMinutes = (long)Math.Round((clockOut - shift.Start).TotalMinutes);
@@ -497,6 +500,11 @@ internal sealed class Daychime : WidgetImplBase
         }
         return string.Format(CultureInfo.CurrentCulture, GetString(strings, "previousRangeMissing"), FormatTime(shift.Start), FormatTime(shift.Finish));
     }
+
+    // 12-hour times use the display language's pattern and AM/PM words, not the system culture's,
+    // so the 12-hour setting works in every culture and TimeInput can parse what is shown.
+    private static string FormatClock(TimeOnly time, bool use24Hour, JsonObject strings) =>
+        TimeInput.Format(time, use24Hour, GetString(strings, "time12"), GetString(strings, "am"), GetString(strings, "pm"));
 
     private static bool GetUse24Hour()
     {
@@ -542,7 +550,8 @@ internal sealed class Daychime : WidgetImplBase
         var finish = activeShift.Finish.ToLocalTime();
         if (finish <= GetCurrentTime()) return;
         var strings = JsonNode.Parse(ReadPackageFileFromUri(GetStringsUri()))!.AsObject();
-        var body = string.Format(CultureInfo.CurrentCulture, strings["finishNotificationBody"]!.GetValue<string>(), finish.ToString(GetUse24Hour() ? "HH:mm" : CultureInfo.CurrentCulture.DateTimeFormat.ShortTimePattern, CultureInfo.CurrentCulture));
+        var body = string.Format(CultureInfo.CurrentCulture, GetString(strings, "finishNotificationBody"),
+            FormatClock(TimeOnly.FromDateTime(finish.DateTime), GetUse24Hour(), strings));
         var payload = new XElement("toast", new XAttribute("launch", "action=view"),
             new XElement("visual", new XElement("binding", new XAttribute("template", "ToastGeneric"),
                 new XElement("text", GetString(strings, "finishNotificationTitle")), new XElement("text", body))),

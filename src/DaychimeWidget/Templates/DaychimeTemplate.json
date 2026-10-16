@@ -164,7 +164,7 @@
               "type": "Column",
               "width": "stretch",
               "items": [
-                { "type": "Input.Text", "id": "clockIn", "value": "${clockInValue}", "label": "${if($host.widgetSize == 'small', '', editLabel)}", "placeholder": "09:30", "spacing": "None" }
+                { "type": "Input.Text", "id": "clockIn", "value": "${clockInValue}", "label": "${if($host.widgetSize == 'small', '', editLabel)}", "placeholder": "${timePlaceholder}", "spacing": "None" }
               ]
             },
             {
@@ -253,7 +253,7 @@
             {
               "type": "Column",
               "width": "stretch",
-              "items": [ { "type": "Input.Text", "id": "autoClockInAfter", "label": "${autoAfterLabel}", "value": "${autoAfterValue}", "placeholder": "06:00", "spacing": "None" } ]
+              "items": [ { "type": "Input.Text", "id": "autoClockInAfter", "label": "${autoAfterLabel}", "value": "${autoAfterValue}", "placeholder": "${autoAfterPlaceholder}", "spacing": "None" } ]
             },
             {
               "type": "Column",
