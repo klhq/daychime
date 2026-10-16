@@ -51,6 +51,17 @@ Check(ShiftLifecycle.ClockOutFromReminder(restarted, key, At(29, 6)) == restarte
 Check(ShiftLifecycle.ClockOutFromReminder(night, key, At(28, 18)) == night, "clock rollback before clock-in cannot create negative elapsed time");
 var shiftedZone = night with { Current = night.Current.Value with { Start = night.Current.Value.Start.ToOffset(TimeSpan.FromHours(-5)) } };
 Check(ShiftLifecycle.GetReminderKey(shiftedZone.Current.Value) == key, "timezone offset change does not invalidate the same instant");
+var taipei = TimeZoneInfo.CreateCustomTimeZone("Note tests +08", TimeSpan.FromHours(8), "Note tests", "Note tests");
+var newYork = TimeZoneInfo.CreateCustomTimeZone("Note tests -05", TimeSpan.FromHours(-5), "Note tests", "Note tests");
+var recordedInTaipei = new Shift(new DateTimeOffset(2026, 10, 15, 9, 0, 0, TimeSpan.FromHours(8)), 9);
+Check(!ShiftLifecycle.IsStartShownInDifferentOffset(recordedInTaipei, taipei)
+    && ShiftLifecycle.IsStartShownInDifferentOffset(recordedInTaipei, newYork), "timezone note appears only when the displayed start was converted");
+var noteRule = TimeZoneInfo.AdjustmentRule.CreateAdjustmentRule(new DateTime(2026, 1, 1), new DateTime(2026, 12, 31), TimeSpan.FromHours(1),
+    TimeZoneInfo.TransitionTime.CreateFixedDateRule(new DateTime(1, 1, 1, 2, 0, 0), 3, 8),
+    TimeZoneInfo.TransitionTime.CreateFixedDateRule(new DateTime(1, 1, 1, 2, 0, 0), 11, 1));
+var noteDstZone = TimeZoneInfo.CreateCustomTimeZone("Note DST tests", TimeSpan.FromHours(-5), "Note DST", "Standard", "Daylight", new[] { noteRule });
+var beforeFallBack = new Shift(new DateTimeOffset(2026, 10, 31, 20, 0, 0, TimeSpan.FromHours(-4)), 9);
+Check(!ShiftLifecycle.IsStartShownInDifferentOffset(beforeFallBack, noteDstZone), "a DST change after clock-in does not show the timezone note");
 Check(ShiftLifecycle.ClockOutFromReminder(night, key, night.Current.Value.Finish.AddHours(24)) == ShiftLifecycle.Normalize(night, night.Current.Value.Finish.AddHours(24)), "exact expiry boundary rejects clock-out");
 Check(ShiftStateCodec.TryRead(ShiftStateCodec.Serialize(night.Current), out var restored) && restored == night.Current, "restart preserves notification revision and precise start time");
 Check(ShiftStateCodec.TryRead(ShiftStateCodec.Serialize(fromToast.Previous), out var restoredFinish) && restoredFinish == fromToast.Previous, "restart preserves actual clock-out and revision");

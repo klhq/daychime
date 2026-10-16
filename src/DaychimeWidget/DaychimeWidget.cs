@@ -73,6 +73,8 @@ internal sealed class Daychime : WidgetImplBase
 
     public override string GetDataForWidget()
     {
+        // The provider can outlive a timezone change (travel, sleep); .NET caches the local zone.
+        TimeZoneInfo.ClearCachedData();
         var now = GetCurrentTime();
         var stored = ReadSnapshot();
         var snapshot = ShiftLifecycle.Normalize(stored, now);
@@ -137,6 +139,8 @@ internal sealed class Daychime : WidgetImplBase
             ["clockInValue"] = hasTimeError && invalidClockInValue is not null ? invalidClockInValue : clockedIn ? start.ToString("HH:mm", CultureInfo.InvariantCulture) : "",
             ["finish"] = clockedIn ? finish.ToString(timeFormat, CultureInfo.CurrentCulture) : "--:--",
             ["endsNextDay"] = clockedIn && finish.Date > start.Date,
+            ["timezoneAdjusted"] = clockedIn && ShiftLifecycle.IsStartShownInDifferentOffset(shift, TimeZoneInfo.Local),
+            ["timezoneAdjustedNote"] = GetString(strings, "timezoneAdjustedNote"),
             ["isWorkdayComplete"] = isWorkdayComplete,
             ["canClockOut"] = clockedIn && !confirmingClear && !isEditing && !isAutoSettings,
             ["canUndoClockOut"] = !clockedIn && snapshot.Previous is Shift { ClockOut: not null } && !confirmingClear && !isEditing && !isAutoSettings,

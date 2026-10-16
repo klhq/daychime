@@ -567,6 +567,16 @@
         },
         {
           "type": "TextBlock",
+          "text": "${timezoneAdjustedNote}",
+          "spacing": "None",
+          "wrap": true,
+          "$when": "${timezoneAdjusted}",
+          "isSubtle": true,
+          "size": "Small",
+          "maxLines": 2
+        },
+        {
+          "type": "TextBlock",
           "text": "${notClockedInYet}",
           "spacing": "Small",
           "wrap": false,
@@ -702,6 +712,16 @@
             }
           ],
           "$when": "${clockedIn}"
+        },
+        {
+          "type": "TextBlock",
+          "text": "${timezoneAdjustedNote}",
+          "spacing": "None",
+          "wrap": true,
+          "$when": "${timezoneAdjusted}",
+          "isSubtle": true,
+          "size": "Small",
+          "maxLines": 2
         },
         {
           "type": "TextBlock",

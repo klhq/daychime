@@ -5,7 +5,7 @@ const root = path.resolve(__dirname, '..');
 const deps = path.resolve(process.env.DAYCHIME_LAYOUT_DEPS || path.join(root, 'artifacts/widget-layout-check'));
 const template = JSON.parse(fs.readFileSync(path.join(root, 'src/DaychimeWidget/Templates/DaychimeTemplate.json'), 'utf8'));
 const locales = ['Resources/Strings.en.json', 'Locales/TraditionalChinese.json', 'Locales/SimplifiedChinese.json'];
-const modes = ['idle', 'idle-previous', 'missing', 'missing-stale', 'working',  'finished','options', 'options-idle', 'options-finished', 'auto', 'auto-error', 'edit', 'edit-error', 'edit-future', 'edit-dst', 'clear'];
+const modes = ['idle', 'idle-previous', 'missing', 'missing-stale', 'working', 'working-timezone', 'finished','options', 'options-idle', 'options-finished', 'auto', 'auto-error', 'edit', 'edit-error', 'edit-future', 'edit-dst', 'clear'];
 const dependencies = path.join(deps, 'adaptivecards-designer/package');
 const galleryLanguage=Number(process.argv[2]||0);
 let layoutBrowser;
@@ -25,11 +25,12 @@ let layoutBrowser;
     for (const [language, relative] of locales.entries()) {
       const s = JSON.parse(fs.readFileSync(path.join(root, 'src/DaychimeWidget', relative), 'utf8'));
       for (const size of ['small','medium','large']) for (const mode of modes) {
-        const normal = ['idle','idle-previous','missing','missing-stale','working','finished'].includes(mode);
-        const working = mode.startsWith('edit') || ['missing-stale','working','finished','options','options-finished','auto','auto-error','clear'].includes(mode);
+        const normal = ['idle','idle-previous','missing','missing-stale','working','working-timezone','finished'].includes(mode);
+        const working = mode.startsWith('edit') || ['missing-stale','working','working-timezone','finished','options','options-finished','auto','auto-error','clear'].includes(mode);
         const previous = !['idle','working'].includes(mode);
         const data = {...s, endsNextDay:true, clockedIn:working, showMain:normal, isAutoSettings:mode.startsWith('auto'), hasAutoTimeError:mode==='auto-error', isEditing:mode.startsWith('edit'), hasTimeError:mode==='edit-error', confirmingClear:mode==='clear', isOptions:mode.startsWith('options'), isWorkdayComplete:mode==='finished'||mode==='options-finished', hasPreviousShift:previous, hasUndoableShift:!working&&previous, needsAutoClockInTime:mode.startsWith('missing'), date:language===0?'Wednesday, September 30, 2026':'2026年10月15日 星期四', now:'12:59 PM', clockIn:'12:59 PM', finish:'12:59 PM', finishCompact:'12:59 PM +1', finishCaption:mode==='finished'?s.workdayCompleteShort:s.finishLabel, clockInValue:mode==='edit-error'?'25:99':'09:00', autoClockInAfter:mode==='auto-error'?'25:99':'06:00', autoClockInEnabled:true, workHoursCompact:'9.5h', workHoursSummary:s.workHoursSummary.replace('{0}','9.5'), formatBadge:'12h', formatToggleTitle:s.switchTo24Hour, workHoursToggleTitle:s.workHoursToggleTitle.replace('{0}','10'), autoClockInCompact:s.autoClockInOnCompact.replace('{0}','06:00'), autoClockInStatus:s.autoClockInAfterLabel.replace('{0}','06:00'), autoClockInToggleTitle:s.configureAutoClockIn, clockInActionTitle:s.startNewWorkday, clockOutActionTitle:s.clockOutNow, undoClockOutActionTitle:s.undoClockOut, previousShiftCompact:s.previousCompact.replace('{0}','12:59 PM').replace('{1}','12:59 PM'), previousShiftSummary:s.previousClockedOutSummary.replace('{0}','10/14 12:59 PM').replace('{1}','10/15 12:59 PM').replace('{2}',s.elapsedHoursMinutes.replace('{0}','9').replace('{1}','30'))};
-        data.clockInTimeCompactLabel = s.clockInTimeCompactLabel.replace('{0}', '2026-10-14');
+        data.timezoneAdjusted = mode==='working-timezone';
+        data.clockInTimeCompactLabel =s.clockInTimeCompactLabel.replace('{0}', '2026-10-14');
         data.hasTimeError = mode.startsWith('edit-');
         data.clockInTimeError = mode==='edit-future' ? s.futureClockInShort : mode==='edit-dst' ? s.invalidLocalTimeShort : s.invalidTimeShort;
         if (mode==='edit-future') data.clockInValue = '23:59';
@@ -67,6 +68,7 @@ let layoutBrowser;
           }
           if(height>expected+0.5) clipped.push(`card:${height}>${expected}`);
           const mode=id.split('-').slice(3).join('-');
+          if(mode==='working-timezone' && size!=='small' && !content.textContent.includes(data.timezoneAdjustedNote)) errors.push('Timezone adjustment note is not displayed');
           if(mode.startsWith('edit') && !content.textContent.includes('2026-10-14')) errors.push('Edit form does not display the shift date');
           if(mode.startsWith('edit-') && !content.textContent.includes(data.clockInTimeError)) errors.push('Edit form does not display the specific time error');
           if(mode==='auto' || mode==='edit') {

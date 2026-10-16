@@ -20,6 +20,11 @@ internal static class ShiftLifecycle
 
     internal static Shift Revise(Shift shift) => shift with { ReminderRevision = Guid.NewGuid().ToString("N") };
 
+    // The start keeps the offset it was recorded in. A different offset for the same
+    // instant in the current zone means the displayed wall-clock time was converted.
+    internal static bool IsStartShownInDifferentOffset(Shift shift, TimeZoneInfo zone) =>
+        zone.GetUtcOffset(shift.Start) != shift.Start.Offset;
+
     internal static ShiftSnapshot ClockOutFromReminder(ShiftSnapshot snapshot, string reminderKey, DateTimeOffset now)
     {
         snapshot = Normalize(snapshot, now);
