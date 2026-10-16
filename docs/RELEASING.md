@@ -51,6 +51,8 @@ Microsoft signs the Store package; do not sign the upload locally or replace its
 
 ## Local checks and packaging
 
+Daychime requires Windows 11: `TargetPlatformMinVersion` in the project and the source manifest minimum are both `10.0.22000.0`. The compilation target uses SDK `10.0.26100.0`; that is not the minimum OS requirement. MSBuild rewrites the packaged manifest from project settings, so the Store build also inspects every nested application manifest in the actual `.msixupload` and fails unless the Windows Desktop minimum is exactly `10.0.22000.0`. No device family may permit an older OS. This verifies packaging metadata, not Widgets/Web Experience Pack availability on a particular device.
+
 The workflow's JavaScript actions use Node.js 24 and are pinned to exact commit SHAs. When updating them, check the official releases, runtime/runner requirements, and input compatibility, then update both the SHA and version comment. `archive: true` preserves the documented artifact ZIP download format. These action runtimes are separate from Daychime's .NET runtime.
 
 Workflow changes apply only to refs containing the changes. Existing release tags and their logs remain unchanged; do not move a release tag to remove an old warning. A CI-runtime deprecation warning does not invalidate an already successfully built Store upload file.

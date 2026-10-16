@@ -69,6 +69,7 @@ try {
         )
     }
 
+    $buildStartedAt = Get-Date
     & $msbuild @arguments
     if ($LASTEXITCODE -ne 0) { throw "Build failed with exit code $LASTEXITCODE." }
 
@@ -78,9 +79,13 @@ try {
     }
 
     $msixUpload = Get-ChildItem -Path (Join-Path $repoRoot 'src\DaychimeWidget\AppPackages') -Filter '*.msixupload' -Recurse |
+        Where-Object LastWriteTime -GE $buildStartedAt |
         Sort-Object LastWriteTime -Descending |
         Select-Object -First 1
     if (-not $msixUpload) { throw 'Store packaging succeeded but no .msixupload file was found.' }
+
+    # Validate the actual nested MSIX manifests, not the source manifest MSBuild can overwrite.
+    & (Join-Path $PSScriptRoot 'Validate-PackagePlatform.ps1') -PackagePath $msixUpload.FullName
 
     if ($OutputDirectory) {
         $outputPath = if ([System.IO.Path]::IsPathRooted($OutputDirectory)) {

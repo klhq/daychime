@@ -6,13 +6,12 @@ A focused Windows 11 widget for tracking your workday: clock in with one tap, se
 
 ## Features
 
-- **One-tap clock-in** — press "Clock in now" and the current time is recorded for the day.
-- **Estimated finish, always visible** — computed from clock-in time plus a configurable workday length.
-- **Actual clock-out** — clock out when you leave to record the real finish time and elapsed time. Undo an accidental clock-out before starting another shift.
-- **Configurable workday length** — a small accent-colored chip cycles through presets (8, 8.5, 9, 9.5, 10 hours); default is 9.
+- **One-tap clock-in** — press "Clock in" and the current time is recorded for the day.
+- **Estimated finish at a glance** — the finish time is the largest thing on the card, with the time left and a progress bar; it turns green once the workday is done.
+- **Actual clock-out** — clock out when you leave to record the real finish time and elapsed time. Undo an accidental clock-out until the next work cycle starts.
+- **Settings in Customize widget** — workday length (8, 8.5, 9, 9.5, 10 hours; default 9), time format (match Windows, 12- or 24-hour) and auto clock-in live in the Widgets Board **⋯ › Customize widget** menu.
 - **Auto clock-in after your chosen time** (opt-in) — records the first eligible Windows sign-in or unlock in each work cycle. A background task wakes the widget on sign-in/unlock, so the finish reminder is scheduled without opening the Widgets Board. If the widget starts later, it recovers the timestamp from available Windows session records for your account and session. Opening the panel never substitutes its opening time. If Windows has no accessible record, the widget asks you to clock in and correct the start manually. Set 06:00 for a typical day job or 18:00 for a night shift.
-- **Edit or clear** — fix a wrong clock-in time, or clear the current shift entirely (with a confirm step).
-- **12/24-hour display** — a one-tap chip next to "Now", independent of the clock-in flow.
+- **Edit or clear** — fix a wrong clock-in time from the medium or large card, or clear the current shift entirely (with a confirm step).
 - **Finish-time reminder** — a Windows notification at your estimated finish time, with a **Clock out now** button that records the time you click. Old notifications cannot clock out a newer shift; undo an accidental clock-out in the widget. Windows notification settings apply, and reminders can be missed when the computer is off.
 - **Timezone-safe** — clock-in and finish times always display in your machine's *current* local timezone, even if it changed after you clocked in (travel, a VM); a small note appears only when that adjustment actually happened.
 - **Overnight and next-day handling** — a shift can cross midnight. A missed clock-out does not block the next eligible auto clock-in: the previous shift is marked as missing an actual clock-out, and the new shift uses the unlock time. A stale shift clears 24 hours after its estimated finish if no new shift starts.
@@ -22,7 +21,7 @@ A focused Windows 11 widget for tracking your workday: clock in with one tap, se
 
 ## Design principles
 
-Keep the main view focused on clock-in and estimated finish. Small has only 82 pixels of content height, so secondary controls live under More. Edit, auto clock-in and clear confirmation each replace the main content with a compact form. Save and Cancel share the input row so neither can fall below the card. See [widget layout checks](docs/widget-layout.md) for size constraints and visual regression checks.
+One glance, one tap. The card answers "when can I leave?" first and offers the single action that fits the moment: clock in, clock out, or undo. Following Microsoft's widget guidance, the main card has at most 1 touch target on Small, 3 on Medium and 4 on Large, and settings live in the host's Customize widget menu instead of in-card pages. Editing the start time and clear confirmation replace the card with a compact form whose Save and Cancel share the input row. See [widget layout checks](docs/widget-layout.md) for size constraints and visual regression checks.
 
 ## Install
 

@@ -71,7 +71,8 @@
 								<Definitions>
                                     <Definition Id="Daychime_Widget" AllowMultiple="false"
 										DisplayName="Daychime"
-										Description="Clock in and see your estimated finish time.">
+										Description="Clock in and see your estimated finish time."
+										IsCustomizable="true">
 										<Capabilities>
 											<Capability>
 												<Size Name="small" />

@@ -12,7 +12,7 @@ using System.Threading;
 [ComVisible(true)]
 [ComDefaultInterface(typeof(IWidgetProvider))]
 [Guid("80DAE84C-DE3C-4F02-8ECD-DCDD1CDECC15")]
-public sealed class WidgetProvider : IWidgetProvider
+public sealed class WidgetProvider : IWidgetProvider, IWidgetProvider2
 {
     public WidgetProvider()
     {
@@ -310,6 +310,32 @@ public sealed class WidgetProvider : IWidgetProvider
             {
                 ProviderDiagnostics.Write($"Recovery update failed for {actionInvokedArgs.WidgetContext.Id}: {updateEx}");
             }
+        }
+    }
+
+    // "Customize widget" in the Widgets Board menu: show settings instead of the workday card
+    // until the user saves or cancels (IsCustomizable in the package manifest).
+    public void OnCustomizationRequested(WidgetCustomizationRequestedArgs customizationRequestedArgs)
+    {
+        var widgetId = customizationRequestedArgs.WidgetContext.Id;
+        ProviderDiagnostics.Write($"Customization requested for {widgetId}.");
+        if (!WidgetInstances.TryGetValue(widgetId, out var widget))
+        {
+            RecoverRunningWidgets();
+            WidgetInstances.TryGetValue(widgetId, out widget);
+        }
+        if (widget is not Daychime daychime) return;
+        try
+        {
+            lock (daychime)
+            {
+                daychime.EnterCustomization();
+                SendWidgetUpdate(daychime);
+            }
+        }
+        catch (Exception ex)
+        {
+            ProviderDiagnostics.Write($"Customization failed for {widgetId}: {ex}");
         }
     }
 

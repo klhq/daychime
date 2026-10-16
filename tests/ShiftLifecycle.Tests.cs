@@ -108,4 +108,5 @@ Check(!SessionActivityEvidence.TryRead(WinlogonXml("5", subscriber: "TermSrv"), 
 Check(!SessionActivityEvidence.TryRead("invalid XML", "PC\\Worker", "sid", 1, out _), "malformed session history is ignored");
 TimeInputTests.Run();
 ShiftTimeEditorTests.Run();
+ShiftPresentationTests.Run();
 Console.WriteLine("All shift lifecycle and time-input scenarios passed.");

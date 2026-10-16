@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <!-- 19041 projects BackgroundTaskBuilder.SetTaskEntryPointClsid; the package still requires Windows 11. -->
-    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
-    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <!-- Compile against the 26100 SDK; installation requires Windows 11 (22000). -->
+    <TargetFramework>net8.0-windows10.0.26100.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.22000.0</TargetPlatformMinVersion>
     <AssemblyName>DaychimeWidget</AssemblyName>
     <RootNamespace>DaychimeWidget</RootNamespace>
     <Platforms>x86;x64;ARM64</Platforms>

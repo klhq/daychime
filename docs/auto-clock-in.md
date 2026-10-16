@@ -12,4 +12,4 @@ No permission elevation or audit-policy changes are requested. If Windows did no
 
 Turning auto clock-in on does not backfill activity from before it was enabled. Existing installations with auto clock-in already on can recover the current cycle without an enable timestamp. Existing clock-ins, including an incorrectly recorded opening time from an older version, are not silently rewritten: correct those in Edit time.
 
-Auto settings use a separate card body for all sizes. The 24-hour time input, Save and Cancel share one row, and the expanded explanation is limited to Large. Previous-shift summaries and the normal workday body are hidden while settings are open. See [widget layout](widget-layout.md) for size and validation coverage.
+Auto clock-in is set in the Widgets Board **⋯ › Customize widget** menu, together with workday length and time format. An invalid earliest time only blocks saving while auto clock-in is on. When auto clock-in is on and the current cycle has no recorded start, the card switches to "When did you start?" with **Clock in now**. See [widget layout](widget-layout.md) for size and validation coverage.

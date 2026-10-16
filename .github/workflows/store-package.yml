@@ -47,6 +47,10 @@ jobs:
         shell: pwsh
         run: ./tests/ReleaseValidation.Tests.ps1
 
+      - name: Test packaged Windows version validation
+        shell: pwsh
+        run: ./tests/PackagePlatform.Tests.ps1
+
       - name: Build widget provider
         if: github.ref_type != 'tag' && github.event_name != 'workflow_dispatch'
         shell: pwsh
