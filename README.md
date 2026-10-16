@@ -9,7 +9,7 @@ A focused Windows 11 widget for tracking your workday: clock in with one tap, se
 - **One-tap clock-in** — press "Clock in" and the current time is recorded for the day.
 - **Estimated finish at a glance** — the finish time is the largest thing on the card, with the time left and a progress bar; it turns green once the workday is done.
 - **Actual clock-out** — clock out when you leave to record the real finish time and elapsed time. Undo an accidental clock-out until the next work cycle starts.
-- **Settings in Customize widget** — workday length (8, 8.5, 9, 9.5, 10 hours; default 9), time format (match Windows, 12- or 24-hour) and auto clock-in live in the Widgets Board **⋯ › Customize widget** menu.
+- **Settings in Customize widget** — workday length (8, 8.5, 9, 9.5, 10 hours; default 9), time format (match Windows, 12- or 24-hour) and auto clock-in live in the Widgets Board **⋯ › Customize widget** menu. The time format applies to times shown on the card; time pickers use Windows' system picker, which follows Windows' clock format.
 - **Auto clock-in after your chosen time** (opt-in) — records the first eligible Windows sign-in or unlock in each work cycle. A background task wakes the widget on sign-in/unlock, so the finish reminder is scheduled without opening the Widgets Board. If the widget starts later, it recovers the timestamp from available Windows session records for your account and session. Opening the panel never substitutes its opening time. If Windows has no accessible record, the widget asks you to clock in and correct the start manually. Set 06:00 for a typical day job or 18:00 for a night shift.
 - **Edit or clear** — fix a wrong clock-in time from the medium or large card, or clear the current shift entirely (with a confirm step).
 - **Finish-time reminder** — a Windows notification at your estimated finish time, with a **Clock out now** button that records the time you click. Old notifications cannot clock out a newer shift; undo an accidental clock-out in the widget. Windows notification settings apply, and reminders can be missed when the computer is off.
@@ -21,7 +21,7 @@ A focused Windows 11 widget for tracking your workday: clock in with one tap, se
 
 ## Design principles
 
-One glance, one tap. The card answers "when can I leave?" first and offers the single action that fits the moment: clock in, clock out, or undo. Following Microsoft's widget guidance, the main card has at most 1 touch target on Small, 3 on Medium and 4 on Large, and settings live in the host's Customize widget menu instead of in-card pages. Editing the start time and clear confirmation replace the card with a compact form whose Save and Cancel share the input row. See [widget layout checks](docs/widget-layout.md) for size constraints and visual regression checks.
+One glance, one tap. The card answers "when can I leave?" first and offers the single action that fits the moment: clock in, clock out, or undo. Following Microsoft's widget guidance, the main card has at most 1 touch target on Small, 3 on Medium and 4 on Large, and settings live in the host's Customize widget menu instead of in-card pages. Editing the start time and clear confirmation replace the card with a compact form; Save and Cancel sit below the time picker, and in Customize widget, Done and Cancel sit below the whole form. See [widget layout checks](docs/widget-layout.md) for size constraints and visual regression checks.
 
 ## Install
 
@@ -35,7 +35,7 @@ See the [Privacy Policy](PRIVACY.md).
 
 ## Development builds
 
-This is a Windows Widget provider, so it cannot be run inside a normal Docker container: the Widget host, MSIX deployment, and certificate store are Windows integrations. Instead, the repository provides a Docker-like single build entry point that makes the Windows build reproducible and discoverable.
+This is a Windows Widget provider, so it cannot run in a container: the Widget host, MSIX deployment and certificate store are Windows integrations. `scripts/Build.ps1` is the single build entry point.
 
 **Prerequisites**
 
@@ -53,6 +53,14 @@ This is a Windows Widget provider, so it cannot be run inside a normal Docker co
 
 The script emits `artifacts\Daychime.msixupload` for Partner Center, not for end-user installation. Microsoft Store signs and distributes the package; no code-signing certificate is needed for Store submission. Local MSIX installation requires developer signing. Use `-Clean` to remove this project's generated build and package files before building.
 
+**Tests**
+```powershell
+dotnet run --project tests/ShiftLifecycle.Tests.csproj
+./tests/WidgetLayout.Tests.ps1
+```
+
+The first runs the shift, time-input and presentation unit tests. The second renders every card state at all sizes, languages and themes with Microsoft's Adaptive Cards renderer; it needs Node.js and Microsoft Edge (see [widget layout checks](docs/widget-layout.md) for one-time setup).
+
 ## Releases
 
 Development uses `main` with version tags, not a full Gitflow branch model. Pull requests and pushes to `main` run tests and build checks. Pushing a `v*` tag runs tests and produces the `Daychime-store-upload` artifact in the **Build Microsoft Store package** workflow. The tag must match the package manifest version: for example, `v1.0.37` corresponds to `1.0.37.0`. Mismatched tags fail; the workflow does not change the version.
@@ -67,6 +75,9 @@ Store listing copy and screenshot requirements are in [docs/STORE_LISTING.md](do
 ## Repository contents
 
 - `src/DaychimeWidget/` — the shipped Windows Widget Provider (Windows App SDK, Adaptive Cards 1.5, COM widget provider model).
+- `tests/` — unit tests, the widget layout check and release/package validation scripts.
+- `scripts/` — the build entry point and release validation.
+- `docs/` — layout, auto clock-in, notification and release notes.
 
 ## License
 

@@ -408,7 +408,7 @@ internal sealed class Daychime : WidgetImplBase
         catch (JsonException) { state = CustomizeErrorPrefix + GetBaseState(State); }
     }
 
-    private void UpdateWidget() => WidgetManager.GetDefault().UpdateWidget(new WidgetUpdateRequestOptions(Id) { Data = GetDataForWidget(), CustomState = State });
+    private void UpdateWidget() => SendUpdate();
 
     private void TryUpdateFinishReminder()
     {

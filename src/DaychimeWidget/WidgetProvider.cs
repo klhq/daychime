@@ -185,7 +185,7 @@ public sealed class WidgetProvider : IWidgetProvider, IWidgetProvider2
                 lock (widget)
                 {
                     if (widget.IsActivated)
-                        SendWidgetUpdate(widget);
+                        SendWidgetUpdate(widget, skipIfUnchanged: true);
                 }
             }
             catch (Exception ex)
@@ -195,24 +195,8 @@ public sealed class WidgetProvider : IWidgetProvider, IWidgetProvider2
         }
     }
 
-    private static WidgetUpdateRequestOptions CreateUpdateRequest(WidgetImplBase widget, bool includeTemplate = false)
-    {
-        var update = new WidgetUpdateRequestOptions(widget.Id)
-        {
-            Data = widget.GetDataForWidget(),
-            CustomState = widget.State
-        };
-
-        if (includeTemplate)
-            update.Template = widget.GetTemplateForWidget();
-
-        return update;
-    }
-
-    private static void SendWidgetUpdate(WidgetImplBase widget, bool includeTemplate = false)
-    {
-        WidgetManager.GetDefault().UpdateWidget(CreateUpdateRequest(widget, includeTemplate));
-    }
+    private static void SendWidgetUpdate(WidgetImplBase widget, bool includeTemplate = false, bool skipIfUnchanged = false) =>
+        widget.SendUpdate(includeTemplate, skipIfUnchanged);
 
     // Handle the CreateWidget call. During this function call you should store
     // the WidgetId value so you can use it to update corresponding widget.
@@ -232,14 +216,7 @@ public sealed class WidgetProvider : IWidgetProvider, IWidgetProvider2
         var widgetInstance = WidgetImpls[widgetContext.DefinitionId](widgetContext.Id, "");
         WidgetInstances[widgetContext.Id] = widgetInstance;
 
-        var options = CreateUpdateRequest(widgetInstance, includeTemplate: true);
-
-        Console.WriteLine("Sending payload:");
-        Console.WriteLine($"---Template---\n{options.Template}\n---\n");
-        Console.WriteLine($"---Data---\n{options.Data}\n---\n");
-        Console.WriteLine($"---Custom State---\n{options.CustomState}\n---\n");
-
-        WidgetManager.GetDefault().UpdateWidget(options);
+        SendWidgetUpdate(widgetInstance, includeTemplate: true);
         ProviderDiagnostics.Write($"Initial update sent for {widgetContext.Id}.");
     }
 
@@ -376,7 +353,9 @@ public sealed class WidgetProvider : IWidgetProvider, IWidgetProvider2
         {
             widget.Activate(widgetContext);
             widget.OnWidgetOpened();
-            SendWidgetUpdate(widget);
+            // The Widgets Board also re-activates the widget when Customize widget opens or closes,
+            // right after the card was sent; resending the same card would make it flash.
+            SendWidgetUpdate(widget, skipIfUnchanged: true);
         }
     }
 
