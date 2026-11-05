@@ -125,3 +125,9 @@ Daychime 是一款专注的 Windows 11 小组件，不必打开工时表或其�
 支持浅色与深色主题
 
 支持英文、繁体中文与简体中文
+
+## Screenshot assets
+
+Real Windows Widgets Board captures for each language are in [store-images/captures](store-images/captures/); the corresponding 1920 × 1080 PNG files for Partner Center are in [store-images/listings](store-images/listings/). The images show a fixed demonstration shift on May 1, 2026. Upload the four files in numeric order to each matching language listing.
+
+To regenerate the listing images from those captures, install Playwright as described in [widget layout checks](widget-layout.md), then run `node scripts/Compose-StoreScreenshots.cjs`. The composition preserves the captures at their original pixel size and places them on a consistent background. Review the resulting images before submission.

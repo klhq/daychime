@@ -2,7 +2,7 @@
 
 A focused Windows 11 widget for tracking your workday: clock in with one tap, see your estimated finish at a glance, and get a reminder when it arrives.
 
-<img src="src/DaychimeWidget/ProviderAssets/Daychime_Screenshot_Light.png" alt="Daychime widget preview" width="300">
+<img src="docs/store-images/captures/en-US/01-working.png" alt="Daychime widget showing an estimated finish time" width="300">
 
 ## Features
 
