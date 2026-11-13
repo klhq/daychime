@@ -1,6 +1,6 @@
 # Auto clock-in and missed session events
 
-The widget provider is started on demand by Windows and does not stay resident on purpose. Board activation is never evidence of a clock-in time.
+The widget provider is started on demand by Windows and does not stay resident on purpose. Board activation is never evidence of a clock-in time. Remote sign-ins and unlocks are excluded by default; choose **On (include remote)** in the auto clock-in control (Off / On / On (include remote); radio buttons on large widgets, a dropdown on medium) to count them. Because both settings share one dropdown, turning automatic clock-in off always clears the remote option.
 
 Daychime is woken in three ways: the Widgets host, a live session-switch notification while the provider is running, and a background task. The provider registers two COM background tasks (`BackgroundTaskBuilder.SetTaskEntryPointClsid`, served by `DaychimeWidget.exe -BackgroundTask`): `UserPresent`, the documented unlock trigger, and `SessionConnected` for sign-in/reconnect. A task launch runs auto clock-in, schedules the finish reminder and exits, unless the Widgets host connected meanwhile. Registration happens the first time the provider starts after installation, so the widget must have been added once. Overlapping triggers are harmless: each work cycle is handled at most once.
 
@@ -9,6 +9,8 @@ On any of these wake-ups, Daychime looks for eligible activity in the current wo
 Plain lock/unlock without sign-out produces no LocalSessionManager event, and 4801 needs an audit policy plus Security log access that regular users lack. Winlogon/Operational is readable without elevation and records an 811 per notification subscriber; only the `Sens` subscriber is counted, with `Event` 2 (logon) or 5 (unlock). These codes are not publicly documented: they were verified against live unlock callbacks (4 is lock, 3 is logoff). The event records the account SID (`Security UserID`) but no session ID, so it cannot distinguish two simultaneous sessions of the same account.
 
 No permission elevation or audit-policy changes are requested. If Windows did not retain an accessible event, Daychime cannot reconstruct a missed unlock. It leaves the record unchanged and shows a manual-entry hint. This is best-effort recovery, not a guaranteed attendance service. If background tasks are disabled for the app, finish reminders wait until the provider next starts; already-passed finish times are not replayed. Background task launches and registration results are written to `provider.log`.
+
+When remote activity is excluded, live events are checked against the current session's Windows client protocol. History recovery uses the latest recorded local or remote session connection (up to 30 days before the current cycle); where the connection cannot be identified, the event is not used. This can require manual clock-in if the relevant Windows logs are missing or have been cleared.
 
 Turning auto clock-in on does not backfill activity from before it was enabled. Existing installations with auto clock-in already on can recover the current cycle without an enable timestamp. Existing clock-ins, including an incorrectly recorded opening time from an older version, are not silently rewritten: correct those in Edit time.
 

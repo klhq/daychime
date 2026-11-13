@@ -106,6 +106,17 @@ Check(!SessionActivityEvidence.TryRead(WinlogonXml("5", sid: "S-1-5-21-456"), "P
 Check(!SessionActivityEvidence.TryRead(WinlogonXml("5", subscriber: "TermSrv"), "PC\\Worker", "S-1-5-21-123", 1, out _),
     "only one Winlogon subscriber is counted per notification");
 Check(!SessionActivityEvidence.TryRead("invalid XML", "PC\\Worker", "sid", 1, out _), "malformed session history is ignored");
+string ConnectionXml(string address, string time, string user = "PC\\Worker") =>
+    $"<Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-TerminalServices-LocalSessionManager'/><EventID>25</EventID><TimeCreated SystemTime='{time}'/></System><UserData><EventXML><User>{user}</User><SessionID>1</SessionID><Address>{address}</Address></EventXML></UserData></Event>";
+var remoteConnection = ConnectionXml("100.93.54.125", "2026-11-13T00:38:04Z");
+var localConnection = ConnectionXml("本機", "2026-11-13T01:22:26Z");
+Check(SessionActivityEvidence.ConnectionIsRemote(remoteConnection, "PC\\Worker", 1, out var remoteTime) == true
+    && SessionActivityEvidence.ConnectionIsRemote(localConnection, "PC\\Worker", 1, out var localTime) == false
+    && SessionActivityEvidence.ConnectionIsRemote(remoteConnection, "PC\\Other", 1, out _) is null, "connection evidence distinguishes remote, local and other users");
+var connections = new[] { (DateTimeOffset.Parse("2026-11-13T00:38:04Z"), true), (DateTimeOffset.Parse("2026-11-13T01:22:26Z"), false) };
+Check(!SessionActivityEvidence.IsLocalAt(DateTimeOffset.Parse("2026-11-13T00:38:05Z"), connections)
+    && SessionActivityEvidence.IsLocalAt(DateTimeOffset.Parse("2026-11-13T01:22:27Z"), connections)
+    && !SessionActivityEvidence.IsLocalAt(DateTimeOffset.Parse("2026-11-13T00:00:00Z"), connections), "history ignores remote and unknown sessions but accepts the later local session");
 TimeInputTests.Run();
 ShiftTimeEditorTests.Run();
 ShiftPresentationTests.Run();

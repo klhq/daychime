@@ -70,8 +70,11 @@
   "am": "上午",
   "pm": "下午",
   "autoToggleTitle": "登录或解锁时自动上班打卡",
+  "autoModeOff": "关闭",
+  "autoModeLocal": "开启",
+  "autoModeRemote": "开启（含远程）",
   "autoAfterLabel": "最早打卡时间",
-  "autoClockInExplanation": "每天这个时间之后，第一次登录或解锁 Windows 会记为上班时间。夜班可以设 {0}。",
+  "autoClockInExplanation": "每天这个时间之后，第一次登录或解锁 Windows 会记为上班时间。夜班可以设 {0}。远程登录或解锁需选“开启（含远程）”才会计入。",
   "customizeSmallHint": "设置需要更大的空间，请先把小组件调成中或大。",
   "finishNotificationTitle": "Daychime",
   "finishNotificationBody": "预计下班时间 {0} 已到。"
