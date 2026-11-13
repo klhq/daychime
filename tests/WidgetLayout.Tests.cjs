@@ -7,7 +7,7 @@ const deps = path.resolve(process.env.DAYCHIME_LAYOUT_DEPS || path.join(root, 'a
 const template = JSON.parse(fs.readFileSync(path.join(root, 'src/DaychimeWidget/Templates/DaychimeTemplate.json'), 'utf8'));
 const locales = ['Resources/Strings.en.json', 'Locales/TraditionalChinese.json', 'Locales/SimplifiedChinese.json'];
 const modes = ['idle', 'idle-manual', 'missing', 'working', 'working-tomorrow', 'working-timezone', 'overtime', 'clocked-out',
-  'edit', 'edit-error', 'edit-future', 'edit-dst', 'confirm-clear', 'customize', 'customize-error'];
+  'edit', 'edit-error', 'edit-future', 'edit-dst', 'confirm-clear', 'customize', 'customize-off', 'customize-error'];
 const dependencies = path.join(deps, 'adaptivecards-designer/package');
 const galleryLanguage = Number(process.argv[2] || 0);
 // Microsoft's widget guidance: at most 1, 3 and 4 touch targets on the main card.
@@ -86,7 +86,9 @@ function buildData(s, mode, language) {
       workHoursChoices: ['8', '8.5', '9', '9.5', '10'].map(value => ({ title: f(s.hoursChoice, value), value })),
       timeFormatLabel: s.timeFormatLabel, timeFormatValue: 'system',
       timeFormatChoices: [['system', s.timeFormatSystem], ['12', s.timeFormat12], ['24', s.timeFormat24]].map(([value, title]) => ({ title, value })),
-      autoToggleTitle: s.autoToggleTitle, autoValue: 'true', autoAfterLabel: s.autoAfterLabel,
+      autoModeLabel: s.autoToggleTitle, autoModeValue: mode === 'customize-off' ? 'off' : 'local',
+      autoModeChoices: [['off', s.autoModeOff], ['local', s.autoModeLocal], ['remote', s.autoModeRemote]].map(([value, title]) => ({ title, value })),
+      autoAfterLabel: s.autoAfterLabel,
       autoAfterValue: '06:00', hasAutoTimeError: mode === 'customize-error', invalidTimeShort: s.invalidTimeShort, autoClockInExplanation: f(s.autoClockInExplanation, clock(6, '00')), customizeSmallHint: s.customizeSmallHint,
       done: s.done, cancel: s.cancel });
   }
@@ -185,6 +187,14 @@ let layoutBrowser;
           if(mode.startsWith('edit') && !content.textContent.includes(size==='small' ? (data.hasTimeError ? data.clockInTimeError : data.editLabelShort) : data.editHint)) errors.push('Edit form does not identify the shift date');
           if(mode.startsWith('edit-') && !content.textContent.includes(data.clockInTimeError)) errors.push('Edit form does not display the specific time error');
           if(mode==='customize-error' && size!=='small' && !content.textContent.includes(data.invalidTimeShort)) errors.push('Customization does not display the time error');
+          if(mode.startsWith('customize') && size!=='small') {
+            // Large shows the three states as radio buttons, medium as a dropdown; neither is a checkbox pair.
+            const autoSelect=[...content.querySelectorAll('select')].find(el=>[...el.options].some(o=>o.textContent===data.autoModeChoices[2].title));
+            const autoRadios=[...content.querySelectorAll('input[type="radio"]')];
+            const okSelect=size==='medium' && autoSelect && [...autoSelect.options].filter(o=>o.value!=='').length===3 && autoSelect.value===data.autoModeValue;
+            const okRadios=size==='large' && autoRadios.length===3 && autoRadios.find(r=>r.checked)?.value===data.autoModeValue;
+            if(!(okSelect || okRadios) || content.querySelector('input[type="checkbox"]')) errors.push('Auto clock-in is not a single three-state control');
+          }
           const form = mode==='edit' ? {save:'saveTime', cancel:'cancelEdit', input:'clockIn', data:'clockInValue'}
             : mode==='customize' && size!=='small' ? {save:'saveCustomization', cancel:'cancelCustomization', input:'autoClockInAfter', data:'autoAfterValue'} : null;
           if(form) {
@@ -201,7 +211,7 @@ let layoutBrowser;
               const sent=window.lastLayoutAction?.data||{};
               if(window.lastLayoutAction?.verb!==form.save || sent[form.input]!=='07:45')
                 errors.push('Save did not submit the edited time: '+JSON.stringify(window.lastLayoutAction));
-              if(form.save==='saveCustomization' && (sent.workHours!=='9.5' || sent.timeFormat!=='system' || sent.autoClockIn!=='true'))
+              if(form.save==='saveCustomization' && (sent.workHours!=='9.5' || sent.timeFormat!=='system' || sent.autoMode!==data.autoModeValue))
                 errors.push('Customization did not submit every setting: '+JSON.stringify(sent));
               press(data.cancel);
               if(window.lastLayoutAction?.verb!==form.cancel) errors.push('Cancel did not invoke its action');

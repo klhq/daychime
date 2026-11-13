@@ -70,8 +70,11 @@
   "am": "AM",
   "pm": "PM",
   "autoToggleTitle": "Clock in automatically on sign-in or unlock",
+  "autoModeOff": "Off",
+  "autoModeLocal": "On",
+  "autoModeRemote": "On (include remote)",
   "autoAfterLabel": "Earliest auto clock-in",
-  "autoClockInExplanation": "Each day, your first Windows sign-in or unlock after this time becomes your start time. Night shift? Use {0}.",
+  "autoClockInExplanation": "Each day, your first Windows sign-in or unlock after this time becomes your start time. Night shift? Use {0}. Remote sign-ins and unlocks count only with “On (include remote)”.",
   "customizeSmallHint": "Settings need more room. Resize the widget to medium or large.",
   "finishNotificationTitle": "Daychime",
   "finishNotificationBody": "Your estimated finish time was {0}."

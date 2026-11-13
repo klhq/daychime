@@ -24,6 +24,7 @@ internal sealed class Daychime : WidgetImplBase
     // View prefixes from earlier versions; stripped when reading state, then shown as the main view.
     private static readonly string[] LegacyViewPrefixes = { "auto-settings|", "auto-settings-error|", "options|" };
     private const string AutoClockInEnabledKey = "AutoClockInOnUnlock";
+    private const string AutoClockInRemoteKey = "AutoClockInRemote";
     private const string AutoClockInAfterKey = "AutoClockInAfter";
     private const string AutoClockInEnabledSinceKey = "AutoClockInEnabledSince";
     private const string LastAutoClockInCycleKey = "LastAutoClockInCycle";
@@ -32,6 +33,7 @@ internal sealed class Daychime : WidgetImplBase
     private static readonly double[] WorkHoursPresets = ShiftLifecycle.WorkHoursPresets;
     private TimeOnly? submittedClockIn;
     private ShiftTimeEditError clockInEditError;
+    private string draftHours, draftFormat, draftAfter, draftAutoMode;
 
     public Daychime(string widgetId, string startingState) : base(widgetId, startingState) { }
 
@@ -66,7 +68,7 @@ internal sealed class Daychime : WidgetImplBase
     }
 
     // Opened from the Widgets Board "Customize widget" menu.
-    internal void EnterCustomization() => state = CustomizePrefix + GetBaseState(State);
+    internal void EnterCustomization() { draftHours = draftFormat = draftAfter = draftAutoMode = null; state = CustomizePrefix + GetBaseState(State); }
 
     public override string GetTemplateForWidget() => ReadPackageFileFromUri("ms-appx:///Templates/DaychimeTemplate.json");
 
@@ -206,18 +208,23 @@ internal sealed class Daychime : WidgetImplBase
             foreach (var hours in WorkHoursPresets)
                 hourChoices.Add(new JsonObject { ["title"] = F("hoursChoice", FormatHours(hours)), ["value"] = FormatHours(hours) });
             data["workHoursLabel"] = T("workHoursLabel");
-            data["workHoursValue"] = FormatHours(workHours);
+            data["workHoursValue"] = draftHours ?? FormatHours(workHours);
             data["workHoursChoices"] = hourChoices;
             data["timeFormatLabel"] = T("timeFormatLabel");
-            data["timeFormatValue"] = ApplicationData.Current.LocalSettings.Values[Use24HourKey] is bool explicit24 ? (explicit24 ? "24" : "12") : "system";
+            data["timeFormatValue"] = draftFormat ?? (ApplicationData.Current.LocalSettings.Values[Use24HourKey] is bool explicit24 ? (explicit24 ? "24" : "12") : "system");
             data["timeFormatChoices"] = new JsonArray(
                 new JsonObject { ["title"] = T("timeFormatSystem"), ["value"] = "system" },
                 new JsonObject { ["title"] = T("timeFormat12"), ["value"] = "12" },
                 new JsonObject { ["title"] = T("timeFormat24"), ["value"] = "24" });
-            data["autoToggleTitle"] = T("autoToggleTitle");
-            data["autoValue"] = autoClockIn ? "true" : "false";
+            // One field holds both settings, so "remote" can never be on while auto clock-in is off.
+            data["autoModeLabel"] = T("autoToggleTitle");
+            data["autoModeValue"] = draftAutoMode ?? GetAutoMode();
+            data["autoModeChoices"] = new JsonArray(
+                new JsonObject { ["title"] = T("autoModeOff"), ["value"] = "off" },
+                new JsonObject { ["title"] = T("autoModeLocal"), ["value"] = "local" },
+                new JsonObject { ["title"] = T("autoModeRemote"), ["value"] = "remote" });
             data["autoAfterLabel"] = T("autoAfterLabel");
-            data["autoAfterValue"] = TimeValue(autoClockInAfter);
+            data["autoAfterValue"] = draftAfter ?? TimeValue(autoClockInAfter);
             data["hasAutoTimeError"] = hasAutoTimeError;
             data["invalidTimeShort"] = T("invalidTimeShort");
             data["autoClockInExplanation"] = F("autoClockInExplanation", Clock(new TimeOnly(18, 0)));
@@ -284,8 +291,9 @@ internal sealed class Daychime : WidgetImplBase
         }
         // Opening the board is not evidence of when work began. Recover an actual
         // logon/unlock first; only a live unlock callback may contribute 'now'.
-        var activity = SessionActivityHistory.Read(now, earliest);
-        if (observedUnlock) activity.Add(now);
+        var includeRemote = GetAutoClockInRemote();
+        var activity = SessionActivityHistory.Read(now, earliest, includeRemote);
+        if (observedUnlock && (includeRemote || SessionActivityHistory.IsCurrentSessionLocal())) activity.Add(now);
         DateTimeOffset? enabledSince = null;
         if (ApplicationData.Current.LocalSettings.Values[AutoClockInEnabledSinceKey] is string since
             && DateTimeOffset.TryParse(since, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var enabled)) enabledSince = enabled;
@@ -375,11 +383,14 @@ internal sealed class Daychime : WidgetImplBase
             using var document = JsonDocument.Parse(data);
             var root = document.RootElement;
             string Read(string name) => ReadString(root, name);
-            var autoOn = Read("autoClockIn") == "true";
+            var autoMode = Read("autoMode") is "off" or "local" or "remote" ? Read("autoMode") : GetAutoMode();
+            var autoOn = autoMode != "off";
             var hasAfter = TryReadTime(root, "autoClockInAfter", out var after);
             // A blank or invalid time only blocks saving when auto clock-in is on.
             if (autoOn && !hasAfter)
             {
+                draftHours = Read("workHours"); draftFormat = Read("timeFormat");
+                draftAfter = Read("autoClockInAfter"); draftAutoMode = autoMode;
                 state = CustomizeErrorPrefix + GetBaseState(State);
                 return;
             }
@@ -402,8 +413,10 @@ internal sealed class Daychime : WidgetImplBase
             if (autoOn && !GetAutoClockInOnUnlock())
                 settings[AutoClockInEnabledSinceKey] = GetCurrentTime().ToString("O", CultureInfo.InvariantCulture);
             settings[AutoClockInEnabledKey] = autoOn;
+            settings[AutoClockInRemoteKey] = autoMode == "remote";
             if (hasAfter) settings[AutoClockInAfterKey] = after.ToString("HH:mm", CultureInfo.InvariantCulture);
             state = GetBaseState(State);
+            draftHours = draftFormat = draftAfter = draftAutoMode = null;
         }
         catch (JsonException) { state = CustomizeErrorPrefix + GetBaseState(State); }
     }
@@ -508,6 +521,8 @@ internal sealed class Daychime : WidgetImplBase
     }
 
     private static bool GetAutoClockInOnUnlock() => ApplicationData.Current.LocalSettings.Values[AutoClockInEnabledKey] is bool enabled && enabled;
+    private static string GetAutoMode() => !GetAutoClockInOnUnlock() ? "off" : GetAutoClockInRemote() ? "remote" : "local";
+    private static bool GetAutoClockInRemote() => ApplicationData.Current.LocalSettings.Values[AutoClockInRemoteKey] is bool enabled && enabled;
 
     private static TimeOnly GetAutoClockInAfter()
     {
