@@ -191,7 +191,7 @@ let layoutBrowser;
             // Large shows the three states as radio buttons, medium as a dropdown; neither is a checkbox pair.
             const autoSelect=[...content.querySelectorAll('select')].find(el=>[...el.options].some(o=>o.textContent===data.autoModeChoices[2].title));
             const autoRadios=[...content.querySelectorAll('input[type="radio"]')];
-            const okSelect=size==='medium' && autoSelect && autoSelect.options.length===3 && autoSelect.value===data.autoModeValue;
+            const okSelect=size==='medium' && autoSelect && [...autoSelect.options].filter(o=>o.value!=='').length===3 && autoSelect.value===data.autoModeValue;
             const okRadios=size==='large' && autoRadios.length===3 && autoRadios.find(r=>r.checked)?.value===data.autoModeValue;
             if(!(okSelect || okRadios) || content.querySelector('input[type="checkbox"]')) errors.push('Auto clock-in is not a single three-state control');
           }
